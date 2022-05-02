@@ -26,51 +26,74 @@ var _ = Describe("odo list with devfile", func() {
 		helper.CommonAfterEach(commonVar)
 	})
 
-	When("a component created in 'app' application", func() {
+	for _, testCtx := range []struct {
+		title       string
+		devfileName string
+		setupFunc   func()
+	}{
+		{
+			title:       "a component created in 'app' application",
+			devfileName: "devfile-deploy.yaml",
+			setupFunc: func() {
+				helper.CopyExample(
+					filepath.Join("source", "devfiles", "nodejs", "kubernetes", "devfile-deploy"),
+					filepath.Join(commonVar.Context, "kubernetes", "devfile-deploy"))
+			},
+		},
+		{
+			title:       "a component created in 'app' application and devfile has Inlined Kubernetes components",
+			devfileName: "devfile-deploy-with-k8s-inlined.yaml",
+		},
+	} {
+		When(testCtx.title, func() {
 
-		var devSession helper.DevSession
-		BeforeEach(func() {
-			helper.CopyExample(filepath.Join("source", "nodejs"), commonVar.Context)
-			helper.CopyExampleDevFile(filepath.Join("source", "devfiles", "nodejs", "devfile-deploy.yaml"), path.Join(commonVar.Context, "devfile.yaml"))
-			helper.Chdir(commonVar.Context)
-			var err error
-			devSession, _, _, _, err = helper.StartDevMode()
-			Expect(err).ToNot(HaveOccurred())
+			var devSession helper.DevSession
+			BeforeEach(func() {
+				helper.CopyExample(filepath.Join("source", "nodejs"), commonVar.Context)
+				helper.CopyExampleDevFile(filepath.Join("source", "devfiles", "nodejs", testCtx.devfileName),
+					path.Join(commonVar.Context, "devfile.yaml"))
+				if testCtx.setupFunc != nil {
+					testCtx.setupFunc()
+				}
+				helper.Chdir(commonVar.Context)
+				var err error
+				devSession, _, _, _, err = helper.StartDevMode()
+				Expect(err).ToNot(HaveOccurred())
+			})
+			AfterEach(func() {
+				devSession.Stop()
+				devSession.WaitEnd()
+			})
+
+			var checkList = func(componentType string) {
+				By("checking the normal output", func() {
+					stdOut := helper.Cmd("odo", "list").ShouldPass().Out()
+					Expect(stdOut).To(ContainSubstring(componentType))
+				})
+			}
+
+			It("show an odo deploy or dev in the list", func() {
+				By("should display the component as 'Dev' in odo list", func() {
+					checkList("Dev")
+				})
+
+				// Fake the odo deploy image build / push passing in "echo" to PODMAN
+				stdout := helper.Cmd("odo", "deploy").AddEnv("PODMAN_CMD=echo").ShouldPass().Out()
+				By("building and pushing image to registry", func() {
+					Expect(stdout).To(ContainSubstring("build -t quay.io/unknown-account/myimage"))
+					Expect(stdout).To(ContainSubstring("push quay.io/unknown-account/myimage"))
+				})
+
+				By("should display the component as 'Deploy' in odo list", func() {
+					// SEPARATE checks, because it may go unordered in the list depending on the query
+					// ex, it could first appear Deploy, Dev or Dev, Deploy
+					checkList("Dev")
+					checkList("Deploy")
+				})
+
+			})
 		})
-		AfterEach(func() {
-			devSession.Stop()
-			devSession.WaitEnd()
-		})
-
-		var checkList = func(componentType string) {
-			By("checking the normal output", func() {
-				stdOut := helper.Cmd("odo", "list").ShouldPass().Out()
-				Expect(stdOut).To(ContainSubstring(componentType))
-			})
-		}
-
-		It("show an odo deploy or dev in the list", func() {
-			By("should display the component as 'Dev' in odo list", func() {
-				checkList("Dev")
-			})
-
-			// Fake the odo deploy image build / push passing in "echo" to PODMAN
-			stdout := helper.Cmd("odo", "deploy").AddEnv("PODMAN_CMD=echo").ShouldPass().Out()
-			By("building and pushing image to registry", func() {
-				Expect(stdout).To(ContainSubstring("build -t quay.io/unknown-account/myimage"))
-				Expect(stdout).To(ContainSubstring("push quay.io/unknown-account/myimage"))
-			})
-
-			By("should display the component as 'Deploy' in odo list", func() {
-				// SEPARATE checks, because it may go unordered in the list depending on the query
-				// ex, it could first appear Deploy, Dev or Dev, Deploy
-				checkList("Dev")
-				checkList("Deploy")
-			})
-
-		})
-
-	})
+	}
 
 	Context("devfile has missing metadata", func() {
 		// Note: We will be using SpringBoot example here because it helps to distinguish between language and projectType.

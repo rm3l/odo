@@ -324,7 +324,7 @@ func TestDeleteComponentClient_ListResourcesToDeleteFromDevfile(t *testing.T) {
 				},
 			},
 			args: args{
-				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy.yaml"),
+				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy-with-k8s-inlined.yaml"),
 				appName:    appName,
 			},
 			wantIsInnerLoopDeployed: true,
@@ -357,7 +357,7 @@ func TestDeleteComponentClient_ListResourcesToDeleteFromDevfile(t *testing.T) {
 			wantErr:                 false,
 		},
 		{
-			name: "only outerloop resources are deployed; innerloop resource is not found",
+			name: "only inlined outerloop resources are deployed; innerloop resource is not found",
 			fields: fields{
 				kubeClient: func(ctrl *gomock.Controller) kclient.ClientInterface {
 					kubeClient := kclient.NewMockClientInterface(ctrl)
@@ -371,7 +371,7 @@ func TestDeleteComponentClient_ListResourcesToDeleteFromDevfile(t *testing.T) {
 				},
 			},
 			args: args{
-				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy.yaml"),
+				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy-with-k8s-inlined.yaml"),
 				appName:    appName,
 			},
 			wantIsInnerLoopDeployed: false,
@@ -395,7 +395,7 @@ func TestDeleteComponentClient_ListResourcesToDeleteFromDevfile(t *testing.T) {
 				},
 			},
 			args: args{
-				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy-with-k8s-uri.yaml"),
+				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy.yaml"),
 				appName:    appName,
 			},
 			wantIsInnerLoopDeployed: false,
@@ -412,7 +412,7 @@ func TestDeleteComponentClient_ListResourcesToDeleteFromDevfile(t *testing.T) {
 				},
 			},
 			args: args{
-				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy.yaml"),
+				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy-with-k8s-inlined.yaml"),
 				appName:    appName,
 			},
 			wantIsInnerLoopDeployed: false,
@@ -430,7 +430,7 @@ func TestDeleteComponentClient_ListResourcesToDeleteFromDevfile(t *testing.T) {
 				},
 			},
 			args: args{
-				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy.yaml"),
+				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy-with-k8s-inlined.yaml"),
 				appName:    appName,
 			},
 			wantIsInnerLoopDeployed: true,
@@ -451,7 +451,7 @@ func TestDeleteComponentClient_ListResourcesToDeleteFromDevfile(t *testing.T) {
 				},
 			},
 			args: args{
-				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy.yaml"),
+				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy-with-k8s-inlined.yaml"),
 				appName:    appName,
 			},
 			wantIsInnerLoopDeployed: true,
@@ -511,7 +511,7 @@ func TestDeleteComponentClient_ExecutePreStopEvents(t *testing.T) {
 				},
 			},
 			args: args{
-				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy.yaml"),
+				devfileObj: odoTestingUtil.GetTestDevfileObjFromFile("devfile-deploy-with-k8s-inlined.yaml"),
 				appName:    appName,
 			},
 			wantErr: false,

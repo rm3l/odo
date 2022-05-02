@@ -29,26 +29,26 @@ var _ = Describe("odo delete command tests", func() {
 		helper.CommonAfterEach(commonVar)
 	})
 
-	for _, ctx := range []struct {
+	for _, testCtx := range []struct {
 		title       string
 		devfileName string
 		setupFunc   func()
 	}{
 		{
 			title:       "a component is bootstrapped",
-			devfileName: "devfile-deploy-with-multiple-resources",
-		},
-		{
-			title:       "a component is bootstrapped using a devfile.yaml with URI-referenced Kubernetes components",
-			devfileName: "devfile-deploy-with-multiple-resources-and-k8s-uri.yaml",
+			devfileName: "devfile-deploy-with-multiple-resources.yaml",
 			setupFunc: func() {
 				helper.CopyExample(
-					filepath.Join("source", "devfiles", "nodejs", "kubernetes", "devfile-deploy-with-multiple-resources-and-k8s-uri"),
-					filepath.Join(commonVar.Context, "kubernetes", "devfile-deploy-with-multiple-resources-and-k8s-uri"))
+					filepath.Join("source", "devfiles", "nodejs", "kubernetes", "devfile-deploy-with-multiple-resources"),
+					filepath.Join(commonVar.Context, "kubernetes", "devfile-deploy-with-multiple-resources"))
 			},
 		},
+		{
+			title:       "a component is bootstrapped using a devfile.yaml with Inlined Kubernetes components",
+			devfileName: "devfile-deploy-with-multiple-resources-and-k8s-inlined.yaml",
+		},
 	} {
-		When(ctx.title, func() {
+		When(testCtx.title, func() {
 			BeforeEach(func() {
 				// Hardcoded names from `ctx.devfileName`
 				cmpName = "mynodejs"
@@ -56,10 +56,10 @@ var _ = Describe("odo delete command tests", func() {
 				serviceName = "my-cs"
 				helper.CopyExample(filepath.Join("source", "devfiles", "nodejs", "project"), commonVar.Context)
 				helper.Cmd("odo", "init", "--name", cmpName, "--devfile-path",
-					helper.GetExamplePath("source", "devfiles", "nodejs", ctx.devfileName)).ShouldPass()
+					helper.GetExamplePath("source", "devfiles", "nodejs", testCtx.devfileName)).ShouldPass()
 				// Note:	component will be automatically bootstrapped when `odo dev` or `odo deploy` is run
-				if ctx.setupFunc != nil {
-					ctx.setupFunc()
+				if testCtx.setupFunc != nil {
+					testCtx.setupFunc()
 				}
 			})
 			It("should fail when the directory does not contain a .odo/env.yaml file", func() {

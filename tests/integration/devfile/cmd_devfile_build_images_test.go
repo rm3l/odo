@@ -75,87 +75,131 @@ var _ = Describe("odo devfile build-images command tests", func() {
 
 	})
 
-	When("using a devfile.yaml containing an Image component with a build context", func() {
-
-		BeforeEach(func() {
-			helper.CopyExample(filepath.Join("source", "nodejs"), commonVar.Context)
-			helper.Cmd("odo", "init", "--name", "aname",
-				"--devfile-path",
-				helper.GetExamplePath("source", "devfiles", "nodejs",
-					"devfile-outerloop-project_source-in-docker-build-context.yaml")).ShouldPass()
-			helper.CreateLocalEnv(commonVar.Context, "aname", commonVar.Project)
-		})
-
-		for _, scope := range []struct {
-			name    string
-			envvars []string
-		}{
-			{
-				name:    "Podman",
-				envvars: []string{"PODMAN_CMD=echo"},
+	for _, testCtx := range []struct {
+		title       string
+		devfileName string
+		setupFunc   func()
+	}{
+		{
+			title:       "using a devfile.yaml containing an Image component with a build context",
+			devfileName: "devfile-outerloop-project_source-in-docker-build-context.yaml",
+			setupFunc: func() {
+				helper.CopyExample(
+					filepath.Join("source", "devfiles", "nodejs", "kubernetes", "devfile-outerloop-project_source-in-docker-build-context"),
+					filepath.Join(commonVar.Context, "kubernetes", "devfile-outerloop-project_source-in-docker-build-context"))
 			},
-			{
-				name: "Docker",
-				envvars: []string{
-					"PODMAN_CMD=a-command-not-found-for-podman-should-make-odo-fallback-to-docker",
-					"DOCKER_CMD=echo",
-				},
-			},
-		} {
-			It(fmt.Sprintf("should build image via %s if build context references PROJECT_SOURCE env var", scope.name), func() {
-				stdout := helper.Cmd("odo", "build-images").AddEnv(scope.envvars...).ShouldPass().Out()
-				lines, err := helper.ExtractLines(stdout)
-				Expect(err).ShouldNot(HaveOccurred())
-				nbLines := len(lines)
-				Expect(nbLines).To(BeNumerically(">", 2))
-				containerImage := "localhost:5000/devfile-nodejs-deploy:0.1.0" // from Devfile yaml file
-				dockerfilePath := filepath.Join(commonVar.Context, "Dockerfile")
-				buildCtx := commonVar.Context
-				Expect(lines[nbLines-2]).To(BeEquivalentTo(
-					fmt.Sprintf("build -t %s -f %s %s", containerImage, dockerfilePath, buildCtx)))
+		},
+		{
+			title:       "using a devfile.yaml containing an Image component with a build context and Inlined Kubernetes components",
+			devfileName: "devfile-outerloop-project_source-in-docker-build-context-and-k8s-inlined.yaml",
+		},
+	} {
+		When(testCtx.title, func() {
+
+			BeforeEach(func() {
+				helper.CopyExample(filepath.Join("source", "nodejs"), commonVar.Context)
+				helper.Cmd("odo", "init", "--name", "aname",
+					"--devfile-path", helper.GetExamplePath("source", "devfiles", "nodejs", testCtx.devfileName)).
+					ShouldPass()
+				helper.CreateLocalEnv(commonVar.Context, "aname", commonVar.Project)
+				if testCtx.setupFunc != nil {
+					testCtx.setupFunc()
+				}
 			})
-		}
-	})
 
-	When("using a devfile.yaml containing an Image component with no build context", func() {
-
-		BeforeEach(func() {
-			helper.CopyExample(filepath.Join("source", "nodejs"), commonVar.Context)
-			helper.CopyExampleDevFile(
-				filepath.Join("source", "devfiles", "nodejs",
-					"issue-5600-devfile-with-image-component-and-no-buildContext.yaml"),
-				filepath.Join(commonVar.Context, "devfile.yaml"))
-			helper.CreateLocalEnv(commonVar.Context, "aname", commonVar.Project)
-		})
-
-		for _, scope := range []struct {
-			name    string
-			envvars []string
-		}{
-			{
-				name:    "Podman",
-				envvars: []string{"PODMAN_CMD=echo"},
-			},
-			{
-				name: "Docker",
-				envvars: []string{
-					"PODMAN_CMD=a-command-not-found-for-podman-should-make-odo-fallback-to-docker",
-					"DOCKER_CMD=echo",
+			for _, scope := range []struct {
+				name    string
+				envvars []string
+			}{
+				{
+					name:    "Podman",
+					envvars: []string{"PODMAN_CMD=echo"},
 				},
+				{
+					name: "Docker",
+					envvars: []string{
+						"PODMAN_CMD=a-command-not-found-for-podman-should-make-odo-fallback-to-docker",
+						"DOCKER_CMD=echo",
+					},
+				},
+			} {
+				It(fmt.Sprintf("should build image via %s if build context references PROJECT_SOURCE env var", scope.name), func() {
+					stdout := helper.Cmd("odo", "build-images").AddEnv(scope.envvars...).ShouldPass().Out()
+					lines, err := helper.ExtractLines(stdout)
+					Expect(err).ShouldNot(HaveOccurred())
+					nbLines := len(lines)
+					Expect(nbLines).To(BeNumerically(">", 2))
+					containerImage := "localhost:5000/devfile-nodejs-deploy:0.1.0" // from Devfile yaml file
+					dockerfilePath := filepath.Join(commonVar.Context, "Dockerfile")
+					buildCtx := commonVar.Context
+					Expect(lines[nbLines-2]).To(BeEquivalentTo(
+						fmt.Sprintf("build -t %s -f %s %s", containerImage, dockerfilePath, buildCtx)))
+				})
+			}
+		})
+	}
+
+	for _, testCtx := range []struct {
+		title       string
+		devfileName string
+		setupFunc   func()
+	}{
+		{
+			title:       "using a devfile.yaml containing an Image component with no build context",
+			devfileName: "issue-5600-devfile-with-image-component-and-no-buildContext.yaml",
+			setupFunc: func() {
+				helper.CopyExample(
+					filepath.Join("source", "devfiles", "nodejs", "kubernetes", "issue-5600-devfile-with-image-component-and-no-buildContext"),
+					filepath.Join(commonVar.Context, "kubernetes", "issue-5600-devfile-with-image-component-and-no-buildContext"))
 			},
-		} {
-			It(fmt.Sprintf("should build image via %s by defaulting build context to devfile path", scope.name), func() {
-				stdout := helper.Cmd("odo", "build-images").AddEnv(scope.envvars...).ShouldPass().Out()
-				lines, err := helper.ExtractLines(stdout)
-				Expect(err).ShouldNot(HaveOccurred())
-				nbLines := len(lines)
-				Expect(nbLines).To(BeNumerically(">", 2))
-				containerImage := "localhost:5000/devfile-nodejs-deploy:0.1.0" // from Devfile yaml file
-				dockerfilePath := filepath.Join(commonVar.Context, "Dockerfile")
-				buildCtx := commonVar.Context
-				Expect(lines[nbLines-2]).To(BeEquivalentTo(
-					fmt.Sprintf("build -t %s -f %s %s", containerImage, dockerfilePath, buildCtx)))
+		},
+		{
+			title:       "using a devfile.yaml containing an Image component with no build context and Inlined Kubernetes components",
+			devfileName: "issue-5600-devfile-with-image-component-and-no-buildContext-and-k8s-inlined.yaml",
+		},
+	} {
+		When(testCtx.title, func() {
+
+			BeforeEach(func() {
+				helper.CopyExample(filepath.Join("source", "nodejs"), commonVar.Context)
+				helper.CopyExampleDevFile(
+					filepath.Join("source", "devfiles", "nodejs", testCtx.devfileName),
+					filepath.Join(commonVar.Context, "devfile.yaml"))
+				helper.CreateLocalEnv(commonVar.Context, "aname", commonVar.Project)
+				if testCtx.setupFunc != nil {
+					testCtx.setupFunc()
+				}
 			})
-		}
-	})
+
+			for _, scope := range []struct {
+				name    string
+				envvars []string
+			}{
+				{
+					name:    "Podman",
+					envvars: []string{"PODMAN_CMD=echo"},
+				},
+				{
+					name: "Docker",
+					envvars: []string{
+						"PODMAN_CMD=a-command-not-found-for-podman-should-make-odo-fallback-to-docker",
+						"DOCKER_CMD=echo",
+					},
+				},
+			} {
+				It(fmt.Sprintf("should build image via %s by defaulting build context to devfile path", scope.name), func() {
+					stdout := helper.Cmd("odo", "build-images").AddEnv(scope.envvars...).ShouldPass().Out()
+					lines, err := helper.ExtractLines(stdout)
+					Expect(err).ShouldNot(HaveOccurred())
+					nbLines := len(lines)
+					Expect(nbLines).To(BeNumerically(">", 2))
+					containerImage := "localhost:5000/devfile-nodejs-deploy:0.1.0" // from Devfile yaml file
+					dockerfilePath := filepath.Join(commonVar.Context, "Dockerfile")
+					buildCtx := commonVar.Context
+					Expect(lines[nbLines-2]).To(BeEquivalentTo(
+						fmt.Sprintf("build -t %s -f %s %s", containerImage, dockerfilePath, buildCtx)))
+				})
+			}
+		})
+	}
 })
