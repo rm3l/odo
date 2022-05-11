@@ -236,11 +236,9 @@ func TestUpdateContainersWithSupervisord(t *testing.T) {
 					},
 				},
 			},
-			componentType:    devfilev1.ContainerComponentType,
-			expectRunCommand: command,
-			//TODO(#5620): Hotfix by ignoring Component Command and Args.
-			// A proper fix will need to be implemented later on.
-			isSupervisordEntrypoint: true,
+			componentType:           devfilev1.ContainerComponentType,
+			expectRunCommand:        command,
+			isSupervisordEntrypoint: false,
 			wantErr:                 false,
 		},
 		{
@@ -271,11 +269,9 @@ func TestUpdateContainersWithSupervisord(t *testing.T) {
 					},
 				},
 			},
-			componentType:    devfilev1.ContainerComponentType,
-			expectRunCommand: command,
-			//TODO(#5620): Hotfix by ignoring Component Command and Args.
-			// A proper fix will need to be implemented later on.
-			isSupervisordEntrypoint: true,
+			componentType:           devfilev1.ContainerComponentType,
+			expectRunCommand:        command,
+			isSupervisordEntrypoint: false,
 			wantErr:                 false,
 		},
 		{
