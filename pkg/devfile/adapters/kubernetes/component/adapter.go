@@ -449,8 +449,6 @@ func (a *Adapter) createOrUpdateComponent(componentExists bool, ei envinfo.EnvSp
 		return err
 	}
 
-	initContainers = append(initContainers, kclient.GetBootstrapSupervisordInitContainer())
-
 	// list all the pvcs for the component
 	pvcs, err := a.Client.ListPVCs(fmt.Sprintf("%v=%v", "component", componentName))
 	if err != nil {
