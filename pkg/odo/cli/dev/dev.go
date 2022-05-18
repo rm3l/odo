@@ -9,12 +9,17 @@ import (
 	"path/filepath"
 	"reflect"
 
-	"github.com/spf13/cobra"
-
 	"github.com/devfile/api/v2/pkg/apis/workspaces/v1alpha2"
 	"github.com/devfile/library/pkg/devfile/parser"
 	parsercommon "github.com/devfile/library/pkg/devfile/parser/data/v2/common"
+	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	ktemplates "k8s.io/kubectl/pkg/util/templates"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/redhat-developer/odo/pkg/component"
 	ododevfile "github.com/redhat-developer/odo/pkg/devfile"
@@ -34,6 +39,8 @@ import (
 	"github.com/redhat-developer/odo/pkg/util"
 	"github.com/redhat-developer/odo/pkg/version"
 	"github.com/redhat-developer/odo/pkg/watch"
+
+	kubecomponent "github.com/redhat-developer/odo/pkg/devfile/adapters/kubernetes/component"
 )
 
 // RecommendedCommandName is the recommended command name
@@ -65,6 +72,12 @@ type DevOptions struct {
 	noWatchFlag     bool
 	randomPortsFlag bool
 	debugFlag       bool
+	// Experimental behavior for using a controller-like approach,
+	// as depicted in https://github.com/redhat-developer/odo/issues/5648
+	// This should allow to get rid of supervisord and the init container.
+	// This also makes it possible for users to provide their own container images.
+	useExperimentalControllerFlag bool
+	//controller *kubecomponent.Controller
 }
 
 type Handler struct{}
@@ -201,6 +214,40 @@ func (o *DevOptions) Run(ctx context.Context) (err error) {
 		"odo version: "+version.VERSION)
 
 	log.Section("Deploying to the cluster in developer mode")
+
+	if o.useExperimentalControllerFlag {
+		//TODO(rm3l): This is just a simple POC to test K8s controllers using the Informer Pattern. Better restructure this
+		//informerFactory := kubeinformers.NewSharedInformerFactory(o.clientset.KubernetesClient.GetClient(), 10 * time.Minute)
+		//o.controller = kubecomponent.NewController(o.clientset.KubernetesClient, informerFactory.Core().V1().Pods())
+		//
+		////notice that there is no need to run the Start method in a separate goroutine.
+		////Start method is non-blocking and runs all registered informers in a dedicated goroutine
+		//informerFactory.Start(wait.NeverStop)
+		//
+		//if err = o.controller.Run(2); err != nil {
+		//	return err
+		//}
+
+		mgr, _ := manager.New(o.clientset.KubernetesClient.GetClientConfig(), manager.Options{})
+
+		myCustomController, _ := controller.New("odo-dev-controller", mgr, controller.Options{
+			Reconciler: &kubecomponent.ReconcilePod{
+				Client: mgr.GetClient(),
+			},
+		})
+
+		//TODO Consider adding predicates to further filter: https://www.sobyte.net/post/2022-04/controller-runtime/
+		if err = myCustomController.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForObject{}); err != nil {
+			return err
+		}
+
+		if err = mgr.Start(signals.SetupSignalHandler()); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	err = o.clientset.DevClient.Start(devFileObj, platformContext, o.ignorePaths, path, o.debugFlag)
 	if err != nil {
 		return err
@@ -297,6 +344,7 @@ func regenerateComponentAdapterFromWatchParams(parameters watch.WatchParameters)
 }
 
 func (o *DevOptions) HandleSignal() error {
+	//o.controller.Shutdown()
 	fmt.Fprintf(o.out, "\n\nCancelling deployment.\nThis is non-preemptive operation, it will wait for other tasks to finish first\n\n")
 	o.cancel()
 	// At this point, `ctx.Done()` will be raised, and the cleanup will be done
@@ -321,6 +369,8 @@ It forwards endpoints with exposure values 'public' or 'internal' to a port on l
 	devCmd.Flags().BoolVar(&o.noWatchFlag, "no-watch", false, "Do not watch for file changes")
 	devCmd.Flags().BoolVar(&o.randomPortsFlag, "random-ports", false, "Assign random ports to redirected ports")
 	devCmd.Flags().BoolVar(&o.debugFlag, "debug", false, "Execute the debug command within the component")
+	devCmd.Flags().BoolVar(&o.useExperimentalControllerFlag, "use-experimental-controller", false,
+		"**EXPERIMENTAL**. Use the new client-side controller to manage resources deployed in the cluster")
 
 	clientset.Add(devCmd, clientset.DEV, clientset.INIT, clientset.KUBERNETES, clientset.STATE)
 	// Add a defined annotation in order to appear in the help menu
