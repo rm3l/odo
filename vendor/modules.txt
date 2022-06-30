@@ -71,6 +71,9 @@ github.com/RangelReale/osincli
 # github.com/Xuanwo/go-locale v1.0.0
 ## explicit; go 1.13
 github.com/Xuanwo/go-locale
+# github.com/alessio/shellescape v1.4.1
+## explicit; go 1.14
+github.com/alessio/shellescape
 # github.com/alexbrainman/sspi v0.0.0-20180613141037-e580b900e9f5
 ## explicit
 github.com/alexbrainman/sspi
@@ -268,7 +271,7 @@ github.com/gobwas/glob/syntax/ast
 github.com/gobwas/glob/syntax/lexer
 github.com/gobwas/glob/util/runes
 github.com/gobwas/glob/util/strings
-# github.com/godbus/dbus/v5 v5.0.4
+# github.com/godbus/dbus/v5 v5.0.6
 ## explicit; go 1.12
 github.com/godbus/dbus/v5
 # github.com/gogo/protobuf v1.3.2
@@ -722,7 +725,7 @@ github.com/xo/terminfo
 # github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c
 ## explicit
 github.com/xtgo/uuid
-# github.com/zalando/go-keyring v0.1.1
+# github.com/zalando/go-keyring v0.2.1
 ## explicit; go 1.13
 github.com/zalando/go-keyring
 github.com/zalando/go-keyring/secret_service
