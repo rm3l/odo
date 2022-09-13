@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/devfile/library/pkg/devfile/parser"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
 	_delete "github.com/redhat-developer/odo/pkg/component/delete"
 	"github.com/redhat-developer/odo/pkg/devfile/adapters"
@@ -484,7 +485,11 @@ func (o *WatchClient) CleanupDevResources(devfileObj parser.DevfileObj, componen
 	fmt.Fprintln(out, "Cleaning resources, please wait")
 	isInnerLoopDeployed, resources, err := o.deleteClient.ListResourcesToDeleteFromDevfile(devfileObj, "app", componentName, labels.ComponentDevMode)
 	if err != nil {
-		fmt.Fprintf(out, "failed to delete inner loop resources: %v", err)
+		if kerrors.IsUnauthorized(err) {
+			fmt.Fprintln(out, "failed to delete inner loop resources: verify authentication to cluster")
+		} else {
+			fmt.Fprintf(out, "failed to delete inner loop resources: %v", err)
+		}
 		return err
 	}
 	// if innerloop deployment resource is present, then execute preStop events
