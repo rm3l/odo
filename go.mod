@@ -14,7 +14,7 @@ require (
 	github.com/devfile/registry-support/registry-library v0.0.0-20220504150710-21de53798172
 	github.com/fatih/color v1.13.0
 	github.com/frapposelli/wwhrd v0.4.0
-	github.com/fsnotify/fsnotify v1.5.1
+	github.com/fsnotify/fsnotify v1.5.4
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.3.0
 	github.com/go-openapi/spec v0.19.5
