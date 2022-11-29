@@ -21,8 +21,6 @@ updates:
   - "area/dependency"
   - "kind/task"
   - "ok-to-test"
-  # 'do-not-merge/hold' because we also need to update the 'scripts/generate-mod.sh' file (and re-run it) accordingly
-  - "do-not-merge/hold"
 
 # Maintain dependencies for Website builds
 - package-ecosystem: "npm"
