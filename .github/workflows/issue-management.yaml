@@ -5,6 +5,7 @@ on:
     types:
     - opened
     - reopened
+    - labeled
 
 env:
   ORGANIZATION: redhat-developer
@@ -26,8 +27,8 @@ jobs:
         add-labels: "needs-triage"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-  add_issue_to_project:
-    name: Add issue to Project
+  manage_issue_in_project:
+    name: Manage issue to Project
     runs-on: ubuntu-latest
     steps:
     - name: Add issue to Project
@@ -37,3 +38,46 @@ jobs:
         # This action needs a Personal Access Token (PAT) to be created with 'repo' and 'project' scopes and be added as repository secret.
         # See https://github.com/actions/add-to-project#creating-a-pat-and-adding-it-to-your-repository and https://github.com/settings/tokens/new
         github-token: ${{ secrets.PROJECT_MANAGEMENT_TOKEN }}
+
+    - name: Get project data
+      env:
+        GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_TOKEN }}
+      run: |
+        gh api graphql -f query='
+          query($org: String!, $number: Int!) {
+            organization(login: $org){
+              projectV2(number: $number) {
+                id
+                fields(first:20) {
+                  nodes {
+                    ... on ProjectV2Field {
+                      id
+                      name
+                    }
+                    ... on ProjectV2SingleSelectField {
+                      id
+                      name
+                      options {
+                        id
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }' -f org=$ORGANIZATION -F number=$PROJECT_NUMBER > project_data.json
+        
+        echo 'PROJECT_ID='$(jq '.data.organization.projectV2.id' project_data.json) >> $GITHUB_ENV
+        #echo 'DATE_FIELD_ID='$(jq '.data.organization.projectV2.fields.nodes[] | select(.name== "Date posted") | .id' project_data.json) >> $GITHUB_ENV
+        #echo 'STATUS_FIELD_ID='$(jq '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .id' project_data.json) >> $GITHUB_ENV
+        #echo 'TODO_OPTION_ID='$(jq '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name=="Todo") |.id' project_data.json) >> $GITHUB_ENV
+        echo 'PRIORITY_URGENT_OPTION_ID='$(jq '.data.organization.projectV2.fields.nodes[] | select(.name== "Priority") | .options[] | select(.name | startswith("Urgent")) |.id' project_data.json) >> $GITHUB_ENV
+        echo 'PRIORITY_HIGH_OPTION_ID='$(jq '.data.organization.projectV2.fields.nodes[] | select(.name== "Priority") | .options[] | select(.name | startswith("High")) |.id' project_data.json) >> $GITHUB_ENV
+        echo 'PRIORITY_MEDIUM_OPTION_ID='$(jq '.data.organization.projectV2.fields.nodes[] | select(.name== "Priority") | .options[] | select(.name | startswith("Medium")) |.id' project_data.json) >> $GITHUB_ENV
+        echo 'PRIORITY_LOW_OPTION_ID='$(jq '.data.organization.projectV2.fields.nodes[] | select(.name== "Priority") | .options[] | select(.name | startswith("Low")) |.id' project_data.json) >> $GITHUB_ENV
+
+    - name: Set Priority field in Project
+      if: startsWith(github.event.label.name, 'priority/')
+
+
