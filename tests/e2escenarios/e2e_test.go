@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -18,29 +17,27 @@ import (
 
 var _ = Describe("E2E Test", func() {
 	var commonVar helper.CommonVar
+	var componentName string
+
 	var _ = BeforeEach(func() {
+		componentName = helper.RandString(6)
 		commonVar = helper.CommonBeforeEach()
 	})
+
 	var _ = AfterEach(func() {
 		helper.CommonAfterEach(commonVar)
 	})
 
 	checkIfDevEnvIsUp := func(url, assertString string) {
-		Eventually(func() string {
+		Eventually(func(g Gomega) {
 			resp, err := http.Get(fmt.Sprintf("http://%s", url))
-			if err != nil {
-				fmt.Fprintf(GinkgoWriter, "error while trying to GET %q: %v\n", url, err)
-				return ""
-			}
+			g.Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("error while trying to GET %q: %v", url, err))
 			defer resp.Body.Close()
-
-			body, _ := io.ReadAll(resp.Body)
-			return string(body)
-		}, 120*time.Second, 15*time.Second).Should(Equal(assertString))
+			g.Expect(resp).To(HaveHTTPBody(assertString))
+		}, 120*time.Second, 15*time.Second).Should(Succeed())
 	}
 
 	Context("starting with empty Directory", func() {
-		componentName := helper.RandString(6)
 		var _ = BeforeEach(func() {
 			helper.Chdir(commonVar.Context)
 			Expect(helper.ListFilesInDir(commonVar.Context)).To(BeEmpty())
@@ -159,11 +156,11 @@ var _ = Describe("E2E Test", func() {
 	})
 
 	Context("starting with non-empty Directory", func() {
-		componentName := helper.RandString(6)
 		var _ = BeforeEach(func() {
 			helper.Chdir(commonVar.Context)
 			helper.CopyExample(filepath.Join("source", "devfiles", "nodejs", "project"), commonVar.Context)
 		})
+
 		It("should verify developer workflow from non-empty Directory", func() {
 			deploymentName := "my-component"
 			serviceName := "my-cs"
@@ -277,32 +274,51 @@ var _ = Describe("E2E Test", func() {
 	})
 
 	Context("starting with non-empty Directory add Binding", func() {
-		componentName := helper.RandString(6)
-
-		sendDataEntry := func(url string) map[string]interface{} {
-			values := map[string]interface{}{"name": "joe",
-				"location": "tokyo",
-				"age":      23,
+		type (
+			user struct {
+				Id       int    `json:"id,omitempty"`
+				Name     string `json:"name"`
+				Location string `json:"location"`
+				Age      int    `json:"age"`
 			}
-			json_data, err := json.Marshal(values)
-			Expect(err).To(BeNil())
-			resp, err := http.Post(fmt.Sprintf("http://%s/api/newuser", url), "application/json", bytes.NewBuffer(json_data))
-			Expect(err).To(BeNil())
-			var res map[string]interface{}
-			err = json.NewDecoder(resp.Body).Decode(&res)
-			Expect(err).To(BeNil())
-			return res
-		}
+			createUserResponse struct {
+				Id      int    `json:"id,omitempty"`
+				Message string `json:"message"`
+			}
+		)
 
-		receiveData := func(url string) (string, error) {
-			resp, err := http.Get(fmt.Sprintf("http://%s", url))
+		createUser := func(url string, u user) (createUserResponse, error) {
+			jsonData, err := json.Marshal(u)
 			if err != nil {
-				return "", err
+				return createUserResponse{}, err
+			}
+			resp, err := http.Post(fmt.Sprintf("http://%s/api/newuser", url), "application/json", bytes.NewBuffer(jsonData))
+			if err != nil {
+				return createUserResponse{}, err
 			}
 			defer resp.Body.Close()
-			body, err := io.ReadAll(resp.Body)
-			Expect(err).To(BeNil())
-			return string(body), nil
+
+			var res createUserResponse
+			err = json.NewDecoder(resp.Body).Decode(&res)
+			if err != nil {
+				return createUserResponse{}, err
+			}
+			return res, nil
+		}
+
+		getUsers := func(url string) ([]user, error) {
+			resp, err := http.Get(fmt.Sprintf("http://%s/api/user", url))
+			if err != nil {
+				return nil, err
+			}
+			defer resp.Body.Close()
+
+			var res []user
+			err = json.NewDecoder(resp.Body).Decode(&res)
+			if err != nil {
+				return nil, err
+			}
+			return res, nil
 		}
 
 		var _ = BeforeEach(func() {
@@ -324,7 +340,6 @@ var _ = Describe("E2E Test", func() {
 			command := []string{"odo", "init"}
 			_, err := helper.RunInteractive(command, nil, func(ctx helper.InteractiveContext) {
 
-				// helper.ExpectString(ctx, "Based on the files in the current directory odo detected")
 				helper.ExpectString(ctx, "Language: Go")
 				helper.ExpectString(ctx, "Project type: Go")
 				helper.ExpectString(ctx, "Is this correct")
@@ -353,27 +368,34 @@ var _ = Describe("E2E Test", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// "send data"
-			_, err = receiveData(fmt.Sprintf(ports["8080"] + "/api/user"))
+			_, err = getUsers(ports["8080"])
 			Expect(err).ToNot(BeNil()) // should fail as application is not connected to DB
 
 			//add binding information (binding as ENV)
 			helper.Cmd("odo", "add", "binding", "--name", bindingName, "--service", "cluster-example-initdb", "--bind-as-files=false").ShouldPass()
 
 			// Get new random port after restart
-			Eventually(func() map[string]string {
+			Eventually(func(g Gomega) map[string]string {
 				_, _, ports, err = devSession.GetInfo()
-				Expect(err).ToNot(HaveOccurred())
+				g.Expect(err).ToNot(HaveOccurred())
 				return ports
 			}, 180, 10).ShouldNot(BeEmpty())
 
 			// "send data"
-			data := sendDataEntry(ports["8080"])
-			Expect(data["message"]).To(Equal("User created successfully"))
+			data, err := createUser(ports["8080"], user{Name: "joe", Location: "tokyo", Age: 23})
+			Expect(err).To(BeNil())
+			Expect(data.Id).NotTo(BeZero())
+			Expect(data.Message).To(Equal("User created successfully"))
 
 			// "get all data"
-			rec, err := receiveData(fmt.Sprintf(ports["8080"] + "/api/user"))
+			uList, err := getUsers(ports["8080"])
 			Expect(err).To(BeNil())
-			helper.MatchAllInOutput(rec, []string{"id", "1", "name", "joe", "location", "tokyo", "age", "23"})
+			Expect(uList).To(HaveLen(1))
+			persistedUser := uList[0]
+			Expect(persistedUser.Id).NotTo(BeZero())
+			Expect(persistedUser.Name).To(Equal("joe"))
+			Expect(persistedUser.Location).To(Equal("tokyo"))
+			Expect(persistedUser.Age).To(Equal(23))
 
 			// check odo describe to check for env
 			stdout := helper.Cmd("odo", "describe", "binding").ShouldPass().Out()
@@ -383,16 +405,20 @@ var _ = Describe("E2E Test", func() {
 			stdout = helper.Cmd("odo", "list").ShouldPass().Out()
 			helper.MatchAllInOutput(stdout, []string{componentName, "Go", "Dev", bindingName})
 
-			// "exit dev mode"
-			devSession.Stop()
-			devSession.WaitEnd()
-
 			// remove bindings and check devfile to not contain binding info
-			// TODO: move `remove binding` inside devsession after https://github.com/redhat-developer/odo/issues/6101 is fixed
 			helper.Cmd("odo", "remove", "binding", "--name", bindingName).ShouldPass()
 
-			devSession, _, _, _, err = helper.StartDevMode(helper.DevSessionOpts{})
-			Expect(err).To(BeNil())
+			// Get new random port after restart
+			Eventually(func(g Gomega) map[string]string {
+				_, _, ports, err = devSession.GetInfo()
+				g.Expect(err).ToNot(HaveOccurred())
+				return ports
+			}, 180, 10).ShouldNot(BeEmpty())
+
+			// "get data"
+			_, err = getUsers(ports["8080"])
+			Expect(err).ToNot(BeNil()) // should fail as application is no longer connected to DB
+
 			stdout = helper.Cmd("odo", "describe", "binding").ShouldPass().Out()
 			Expect(stdout).To(ContainSubstring("No ServiceBinding used by the current component"))
 
