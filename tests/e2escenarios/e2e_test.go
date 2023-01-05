@@ -383,16 +383,19 @@ var _ = Describe("E2E Test", func() {
 			stdout = helper.Cmd("odo", "list").ShouldPass().Out()
 			helper.MatchAllInOutput(stdout, []string{componentName, "Go", "Dev", bindingName})
 
-			// "exit dev mode"
-			devSession.Stop()
-			devSession.WaitEnd()
-
 			// remove bindings and check devfile to not contain binding info
-			// TODO: move `remove binding` inside devsession after https://github.com/redhat-developer/odo/issues/6101 is fixed
 			helper.Cmd("odo", "remove", "binding", "--name", bindingName).ShouldPass()
 
-			devSession, _, _, _, err = helper.StartDevMode(helper.DevSessionOpts{})
-			Expect(err).To(BeNil())
+			// Get new random port after restart
+			Eventually(func(g Gomega) map[string]string {
+				_, _, ports, err = devSession.GetInfo()
+				g.Expect(err).ToNot(HaveOccurred())
+				return ports
+			}, 180, 10).ShouldNot(BeEmpty())
+
+			_, err = receiveData(fmt.Sprintf(ports["8080"] + "/api/user"))
+			Expect(err).ToNot(BeNil()) // should fail as application is not connected to DB
+
 			stdout = helper.Cmd("odo", "describe", "binding").ShouldPass().Out()
 			Expect(stdout).To(ContainSubstring("No ServiceBinding used by the current component"))
 
