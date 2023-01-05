@@ -287,6 +287,7 @@ var _ = Describe("E2E Test", func() {
 			Expect(err).To(BeNil())
 			resp, err := http.Post(fmt.Sprintf("http://%s/api/newuser", url), "application/json", bytes.NewBuffer(json_data))
 			Expect(err).To(BeNil())
+			defer resp.Body.Close()
 			var res map[string]interface{}
 			err = json.NewDecoder(resp.Body).Decode(&res)
 			Expect(err).To(BeNil())
