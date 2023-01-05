@@ -18,8 +18,10 @@ import (
 
 var _ = Describe("E2E Test", func() {
 	var commonVar helper.CommonVar
+	var componentName string
 	var _ = BeforeEach(func() {
 		commonVar = helper.CommonBeforeEach()
+		componentName = helper.RandString(6)
 	})
 	var _ = AfterEach(func() {
 		helper.CommonAfterEach(commonVar)
@@ -40,7 +42,6 @@ var _ = Describe("E2E Test", func() {
 	}
 
 	Context("starting with empty Directory", func() {
-		componentName := helper.RandString(6)
 		var _ = BeforeEach(func() {
 			helper.Chdir(commonVar.Context)
 			Expect(helper.ListFilesInDir(commonVar.Context)).To(BeEmpty())
@@ -159,7 +160,6 @@ var _ = Describe("E2E Test", func() {
 	})
 
 	Context("starting with non-empty Directory", func() {
-		componentName := helper.RandString(6)
 		var _ = BeforeEach(func() {
 			helper.Chdir(commonVar.Context)
 			helper.CopyExample(filepath.Join("source", "devfiles", "nodejs", "project"), commonVar.Context)
@@ -277,7 +277,6 @@ var _ = Describe("E2E Test", func() {
 	})
 
 	Context("starting with non-empty Directory add Binding", func() {
-		componentName := helper.RandString(6)
 
 		sendDataEntry := func(url string) map[string]interface{} {
 			values := map[string]interface{}{"name": "joe",
