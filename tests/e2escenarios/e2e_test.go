@@ -360,9 +360,9 @@ var _ = Describe("E2E Test", func() {
 			helper.Cmd("odo", "add", "binding", "--name", bindingName, "--service", "cluster-example-initdb", "--bind-as-files=false").ShouldPass()
 
 			// Get new random port after restart
-			Eventually(func() map[string]string {
+			Eventually(func(g Gomega) map[string]string {
 				_, _, ports, err = devSession.GetInfo()
-				Expect(err).ToNot(HaveOccurred())
+				g.Expect(err).ToNot(HaveOccurred())
 				return ports
 			}, 180, 10).ShouldNot(BeEmpty())
 
