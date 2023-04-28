@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/redhat-developer/odo/pkg/podman"
@@ -74,6 +75,22 @@ ignore_chown_errors="true"
 `, runrootDir, graphrootDir, rootlessDir, imagestoreDir))
 	Expect(err).ShouldNot(HaveOccurred())
 	os.Setenv("CONTAINERS_STORAGE_CONF", containersStorageConfPath)
+}
+
+// removeEverythingFromPodman removes everything from Podman: this includes containers, volumes, images, and all storage created by Podman.
+// /!\ This is intended to help remove the test directory (which also contains resources created via generateAndSetContainersConf);
+// otherwise, the folders referenced in the storage.conf file (and managed by Podman) cannot be deleted by the current user.
+func removeEverythingFromPodman() {
+	cmd := []string{"podman", "system", "reset", "--force"}
+	fmt.Fprintln(GinkgoWriter, "Running command:", cmd)
+	out, err := exec.Command(cmd[0], cmd[1:]...).Output()
+	Expect(err).ToNot(HaveOccurred(), func() string {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			err = fmt.Errorf("%s: %s\n%s", err, string(exiterr.Stderr), string(out))
+		}
+		return err.Error()
+	})
+	fmt.Fprintf(GinkgoWriter, "output of command '%v': %s\n", cmd, string(out))
 }
 
 // ExtractK8sAndOcComponentsFromOutputOnPodman extracts the list of Kubernetes and OpenShift components from the "odo" output on Podman.

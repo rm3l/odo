@@ -288,6 +288,11 @@ func CommonAfterEach(commonVar CommonVar) {
 		// delete the random project/namespace created in CommonBeforeEach
 		commonVar.CliRunner.DeleteNamespaceProject(commonVar.Project, false)
 	}
+
+	if NeedsPodman(CurrentSpecReport().Labels()) {
+		removeEverythingFromPodman()
+	}
+
 	// restores the original kubeconfig and working directory
 	Chdir(commonVar.OriginalWorkingDirectory)
 	err = os.Setenv("KUBECONFIG", commonVar.OriginalKubeconfig)
