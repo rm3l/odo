@@ -215,7 +215,7 @@ func CommonBeforeEach() CommonVar {
 
 		if NeedsPodman(specLabels) {
 			// Generate a dedicated containers.conf with a specific namespace
-			GenerateAndSetContainersConf(commonVar.ConfigDir)
+			generateAndSetContainersConf(commonVar.ConfigDir)
 		}
 	}
 	commonVar.OriginalWorkingDirectory = Getwd()

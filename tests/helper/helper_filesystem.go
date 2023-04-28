@@ -38,7 +38,7 @@ func DeleteDir(dir string) {
 		}
 
 		errorReportedAtLeastOnce = true
-		fmt.Fprintf(GinkgoWriter, "Unable to delete %s on attempt #%d, trying again...\n", dir, attempts)
+		fmt.Fprintf(GinkgoWriter, "Unable to delete %s on attempt #%d, trying again...\n%v", dir, attempts, err)
 
 		return err
 	}, 16, 2*time.Minute)
