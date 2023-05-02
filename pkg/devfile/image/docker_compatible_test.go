@@ -15,14 +15,16 @@ import (
 )
 
 func TestGetShellCommand(t *testing.T) {
-	devfilePath := filepath.Join("home", "user", "project1")
-	tests := []struct {
+	type test struct {
 		name        string
 		cmdName     string
+		extraArgs   []string
 		image       *devfile.ImageComponent
 		devfilePath string
 		want        []string
-	}{
+	}
+	devfilePath := filepath.Join("home", "user", "project1")
+	tests := []test{
 		{
 			name:    "test 1",
 			cmdName: "cli",
@@ -135,9 +137,34 @@ func TestGetShellCommand(t *testing.T) {
 		},
 	}
 
+	allTests := make([]test, len(tests))
+	copy(allTests, tests)
+	extraArgs := []string{
+		"--flag1=value1",
+		"--flag2=value2",
+	}
 	for _, tt := range tests {
+		var want []string
+		if len(tt.want) != 0 {
+			want = append(want, tt.cmdName)
+			want = append(want, extraArgs...)
+			if len(tt.want) > 1 {
+				want = append(want, tt.want[1:]...)
+			}
+		}
+		allTests = append(allTests, test{
+			name:        tt.name + " - with extra args",
+			cmdName:     tt.cmdName,
+			extraArgs:   extraArgs,
+			image:       tt.image,
+			devfilePath: devfilePath,
+			want:        want,
+		})
+	}
+
+	for _, tt := range allTests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getShellCommand(tt.cmdName, tt.image, tt.devfilePath, tt.image.Dockerfile.Uri)
+			got := getShellCommand(tt.cmdName, tt.extraArgs, tt.image, tt.devfilePath, tt.image.Dockerfile.Uri)
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Errorf("getShellCommand() mismatch (-want +got):\n%s", diff)
 			}
