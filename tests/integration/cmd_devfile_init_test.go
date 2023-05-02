@@ -205,7 +205,7 @@ var _ = Describe("odo devfile init command tests", func() {
 				When("using --devfile-path flag with a local devfile", func() {
 					var newContext string
 					BeforeEach(func() {
-						newContext = helper.CreateNewContext()
+						newContext = helper.CreateNewContext("", "odo-tests-cmd_devfile_init*")
 						newDevfilePath := filepath.Join(newContext, "devfile.yaml")
 						helper.CopyExampleDevFile(filepath.Join("source", "devfiles", "nodejs", "devfile-registry.yaml"), newDevfilePath)
 						helper.Cmd("odo", "init", "--name", "aname", "--devfile-path", newDevfilePath).ShouldPass()
@@ -320,7 +320,7 @@ var _ = Describe("odo devfile init command tests", func() {
 				var newContext, devfilePath string
 
 				BeforeEach(func() {
-					newContext = helper.CreateNewContext()
+					newContext = helper.CreateNewContext("", "odo-tests-cmd_devfile_init*")
 					devfilePath = filepath.Join(newContext, "devfile.yaml")
 				})
 

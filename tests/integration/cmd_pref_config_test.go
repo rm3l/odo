@@ -59,7 +59,7 @@ var _ = Describe("odo preference and config command tests", func() {
 				// during the tests, but we want to check preference values as they would be in real time and hence
 				// we set the GLOBALODOCONFIG variable to a value in new context
 				var _ = JustBeforeEach(func() {
-					newContext = helper.CreateNewContext()
+					newContext = helper.CreateNewContext("", "odo-tests-cmd_pref_config-*")
 					os.Setenv("GLOBALODOCONFIG", filepath.Join(newContext, "preference.yaml"))
 				})
 				var _ = JustAfterEach(func() {

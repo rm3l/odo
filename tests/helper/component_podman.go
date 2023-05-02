@@ -33,7 +33,7 @@ func NewPodmanComponent(componentName string, app string) *PodmanComponent {
 
 func (o *PodmanComponent) ExpectIsDeployed() {
 	podName := fmt.Sprintf("%s-%s", o.componentName, o.app)
-	cmd := exec.Command("podman", "pod", "list", "--format", "{{.Name}}", "--noheading")
+	cmd := exec.Command("podman", append(GetPodmanExtraArgs(), "pod", "list", "--format", "{{.Name}}", "--noheading")...)
 	stdout, err := cmd.Output()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(string(stdout)).To(ContainSubstring(podName))
@@ -41,7 +41,7 @@ func (o *PodmanComponent) ExpectIsDeployed() {
 
 func (o *PodmanComponent) ExpectIsNotDeployed() {
 	podName := fmt.Sprintf("%s-%s", o.componentName, o.app)
-	cmd := exec.Command("podman", "pod", "list", "--format", "{{.Name}}", "--noheading")
+	cmd := exec.Command("podman", append(GetPodmanExtraArgs(), "pod", "list", "--format", "{{.Name}}", "--noheading")...)
 	stdout, err := cmd.Output()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(string(stdout)).ToNot(ContainSubstring(podName))
@@ -54,13 +54,14 @@ func (o *PodmanComponent) Exec(container string, args []string, expectedSuccess 
 	cmdargs = append(cmdargs, containerName)
 	cmdargs = append(cmdargs, args...)
 
-	command := exec.Command("podman", cmdargs...)
+	command := exec.Command("podman", append(GetPodmanExtraArgs(), cmdargs...)...)
+	fmt.Fprintln(GinkgoWriter, "Executing command:", command.Args)
 	out, err := command.CombinedOutput()
 	if err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			err = fmt.Errorf("%s: %s", err, string(exiterr.Stderr))
 		}
-		fmt.Fprintln(GinkgoWriter, err)
+		fmt.Fprintln(GinkgoWriter, "output:", string(out), "err:", err)
 	}
 	if expectedSuccess != nil {
 		if *expectedSuccess {
@@ -102,7 +103,7 @@ func (o *PodmanComponent) GetPodDef() *corev1.Pod {
 		},
 	)
 
-	cmd := exec.Command("podman", "generate", "kube", podname)
+	cmd := exec.Command("podman", append(GetPodmanExtraArgs(), "generate", "kube", podname)...)
 	resultBytes, err := cmd.Output()
 	Expect(err).ToNot(HaveOccurred())
 	var pod corev1.Pod
@@ -118,7 +119,7 @@ func (o *PodmanComponent) GetJobDef() *batchv1.Job {
 
 func (o *PodmanComponent) GetLabels() map[string]string {
 	podName := fmt.Sprintf("%s-%s", o.componentName, o.app)
-	cmd := exec.Command("podman", "pod", "inspect", podName, "--format", "json")
+	cmd := exec.Command("podman", append(GetPodmanExtraArgs(), "pod", "inspect", podName, "--format", "json")...)
 	stdout, err := cmd.Output()
 	Expect(err).ToNot(HaveOccurred(), func() {
 		if exiterr, ok := err.(*exec.ExitError); ok {
@@ -142,7 +143,7 @@ func (o *PodmanComponent) GetAnnotations() map[string]string {
 
 func (o *PodmanComponent) GetPodLogs() string {
 	podName := fmt.Sprintf("%s-%s", o.componentName, o.app)
-	cmd := exec.Command("podman", "pod", "logs", podName)
+	cmd := exec.Command("podman", append(GetPodmanExtraArgs(), "pod", "logs", podName)...)
 	stdout, err := cmd.Output()
 	Expect(err).ToNot(HaveOccurred(), func() {
 		if exiterr, ok := err.(*exec.ExitError); ok {
@@ -154,7 +155,7 @@ func (o *PodmanComponent) GetPodLogs() string {
 }
 
 func (o *PodmanComponent) ListImages() string {
-	cmd := exec.Command("podman", "images", "--format", "{{.Repository}}:{{.Tag}}", "--noheading")
+	cmd := exec.Command("podman", append(GetPodmanExtraArgs(), "images", "--format", "{{.Repository}}:{{.Tag}}", "--noheading")...)
 	stdout, err := cmd.Output()
 	Expect(err).ToNot(HaveOccurred(), func() {
 		if exiterr, ok := err.(*exec.ExitError); ok {

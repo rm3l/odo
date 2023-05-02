@@ -3519,8 +3519,7 @@ CMD ["npm", "start"]
 
 				It("should use the directory as component name", func() {
 					// when no further source code is available, directory name is returned by alizer.DetectName as component name;
-					// and since it is all-numeric in our tests, an "x" prefix is added by util.GetDNS1123Name (called by alizer.DetectName)
-					componentName := "x" + filepath.Base(commonVar.Context)
+					componentName := filepath.Base(commonVar.Context)
 
 					component := helper.NewComponent(componentName, "app", labels.ComponentDevMode, commonVar.Project, commonVar.CliRunner)
 					component.Exec("runtime",

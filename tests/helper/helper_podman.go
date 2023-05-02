@@ -7,35 +7,94 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"github.com/redhat-developer/odo/pkg/podman"
 )
 
-func getBooleanValueFromEnvVar(envvar string, defaultValue bool) bool {
-	strVal := os.Getenv("PODMAN_USE_NAMESPACES")
-	boolValue, err := strconv.ParseBool(strVal)
-	if err != nil {
-		return defaultValue
-	}
-	return boolValue
+func getPodmanDir(configDir string) string {
+	return filepath.Join(configDir, "podman")
 }
 
-func GenerateAndSetContainersConf(dir string) {
-	useNamespaces := getBooleanValueFromEnvVar("PODMAN_USE_NAMESPACES", true)
-	if !useNamespaces {
+func beforeEachPodmanTest(configDir string) {
+	podmanDir := getPodmanDir(configDir)
+	rootDir := filepath.Join(podmanDir, "root")
+	runrootDir := filepath.Join(podmanDir, "run")
+	tmpDir := filepath.Join(podmanDir, "tmp")
+	//volumeDir := filepath.Join(podmanDir, "vol")
+	for _, d := range []string{
+		rootDir,
+		runrootDir,
+		tmpDir,
+		//volumeDir,
+	} {
+		MakeDir(d)
+	}
+	extraArgs := []string{
+		// Storage root dir in which data, including images, is stored
+		// (default: “/var/lib/containers/storage” for UID 0, “$HOME/.local/share/containers/storage” for other users).
+		"--root=" + rootDir,
+
+		// Storage state directory where all state information is stored
+		// (default: “/run/containers/storage” for UID 0, “/run/user/$UID/run” for other users).
+		"--runroot=" + runrootDir,
+
+		//// Enables a global transient storage mode where all container metadata is stored on non-persistent media
+		//// (i.e. in the location specified by --runroot).
+		//// This mode allows starting containers faster, as well as guaranteeing a fresh state on boot
+		//// in case of unclean shutdowns or other problems.
+		//// However it is not compatible with a traditional model where containers persist across reboots.
+		// unknown flag on Podman v3
+		//"--transient-store=true",
+
+		// Path to the tmp directory, for libpod runtime content. Defaults to $XDG_RUNTIME_DIR/libpod/tmp as rootless and /run/libpod/tmp as rootful.
+		// NOTE --tmpdir is not used for the temporary storage of downloaded images.
+		"--tmpdir=" + tmpDir,
+
+		//// Volume directory where builtin volume information is stored
+		//// (default: “/var/lib/containers/storage/volumes” for UID 0, “$HOME/.local/share/containers/storage/volumes” for other users).
+		// Does not seem to work with Podman v3 (or play kube command?)
+		//"--volumepath=" + volumeDir,
+	}
+	extraArgsStr := strings.Join(extraArgs, ",")
+	Expect(os.Setenv("ODO_IMAGE_BUILD_ARGS", extraArgsStr)).ShouldNot(HaveOccurred())
+	Expect(os.Setenv("ODO_CONTAINER_RUN_ARGS", extraArgsStr)).ShouldNot(HaveOccurred())
+}
+
+// GetPodmanExtraArgs returns the extra flags to pass to Podman.
+// Make sure this is called after common.BeforeEach()
+func GetPodmanExtraArgs() []string {
+	env, present := os.LookupEnv("ODO_CONTAINER_RUN_ARGS")
+	Expect(present).To(BeTrue(),
+		"env var ODO_CONTAINER_RUN_ARGS not found => make sure commonVar.BeforeEach was called before and that this test has the podman label")
+	return strings.Split(env, ",")
+}
+
+// afterEachPodmanTest removes everything from Podman: this includes containers, volumes, images, and all storage created by Podman.
+// /!\ This is intended to help remove the test directory (which also contains resources created via beforeEachPodmanTest);
+// otherwise, the folders referenced in the storage.conf file (and managed by Podman) cannot be deleted by the current user.
+func afterEachPodmanTest(configDir string) {
+	// Initially wanted to use "podman --root=... --runroot=... system reset", but for some reason, this causes issues with other tests
+	podmanDir := getPodmanDir(configDir)
+	if _, err := os.Stat(podmanDir); os.IsNotExist(err) {
+		fmt.Fprintf(GinkgoWriter, "[warn] Podman config directory not found at path %q\n", podmanDir)
 		return
 	}
-	ns := GetProjectName()
-	containersConfPath := filepath.Join(dir, "containers.conf")
-	err := CreateFileWithContent(containersConfPath, fmt.Sprintf(`
-[engine]
-namespace=%q
-`, ns))
-	Expect(err).ShouldNot(HaveOccurred())
-	os.Setenv("CONTAINERS_CONF", containersConfPath)
+	cmd := exec.Command("podman", "unshare", "rm", "-rf", podmanDir)
+	fmt.Fprintln(GinkgoWriter, "Running command:", cmd.Args)
+	out, err := cmd.Output()
+	if err != nil {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			err = fmt.Errorf("%s: %s\n%s", err, string(exiterr.Stderr), string(out))
+		}
+		fmt.Fprintf(GinkgoWriter, "[warn] Error while trying to remove podman dir %q: %v.\n"+
+			"You might need to remove it yourself by running %q\n%s", podmanDir, err.Error(), strings.Join(cmd.Args, " "), string(out))
+		return
+	}
+	fmt.Fprintf(GinkgoWriter, "output of command '%v': %s\n", cmd, string(out))
 }
 
 // ExtractK8sAndOcComponentsFromOutputOnPodman extracts the list of Kubernetes and OpenShift components from the "odo" output on Podman.

@@ -13,9 +13,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// CreateNewContext create new empty temporary directory
-func CreateNewContext() string {
-	directory, err := os.MkdirTemp("", "")
+// CreateNewContext create new empty temporary directory in the directory specified
+func CreateNewContext(dir, pattern string) string {
+	directory, err := os.MkdirTemp(dir, pattern)
 	Expect(err).NotTo(HaveOccurred())
 	fmt.Fprintf(GinkgoWriter, "Created dir: %s\n", directory)
 	return directory

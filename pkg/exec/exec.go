@@ -46,7 +46,7 @@ func (o ExecClient) ExecuteCommand(ctx context.Context, command []string, podNam
 
 	if err != nil {
 		// It is safe to read from stdout and stderr here, as the goroutines are guaranteed to have terminated at this point.
-		klog.V(2).Infof("ExecuteCommand returned an an err: %v. for command '%v'\nstdout: %v\nstderr: %v",
+		klog.V(2).Infof("ExecuteCommand returned an err: %v. for command '%v'\nstdout: %v\nstderr: %v",
 			err, command, stdout, stderr)
 
 		msg := fmt.Sprintf("unable to exec command %v", command)

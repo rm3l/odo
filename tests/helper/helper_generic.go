@@ -191,8 +191,12 @@ func CommonBeforeEach() CommonVar {
 	SetDefaultConsistentlyDuration(30 * time.Second)
 
 	commonVar := CommonVar{}
-	commonVar.Context = CreateNewContext()
-	commonVar.ConfigDir = CreateNewContext()
+
+	projectPrefix := "odo-tests-project-"
+	commonVar.Context = CreateNewContext("", projectPrefix+"*")
+	commonVar.ConfigDir = filepath.Join(os.TempDir(), "odo-tests-config-"+strings.TrimPrefix(filepath.Base(commonVar.Context), projectPrefix))
+	MakeDir(commonVar.ConfigDir)
+
 	commonVar.CliRunner = GetCliRunner()
 	commonVar.OriginalKubeconfig = os.Getenv("KUBECONFIG")
 	specLabels := CurrentSpecReport().Labels()
@@ -215,7 +219,7 @@ func CommonBeforeEach() CommonVar {
 
 		if NeedsPodman(specLabels) {
 			// Generate a dedicated containers.conf with a specific namespace
-			GenerateAndSetContainersConf(commonVar.ConfigDir)
+			beforeEachPodmanTest(commonVar.ConfigDir)
 		}
 	}
 	commonVar.OriginalWorkingDirectory = Getwd()
@@ -288,6 +292,11 @@ func CommonAfterEach(commonVar CommonVar) {
 		// delete the random project/namespace created in CommonBeforeEach
 		commonVar.CliRunner.DeleteNamespaceProject(commonVar.Project, false)
 	}
+
+	if NeedsPodman(CurrentSpecReport().Labels()) {
+		afterEachPodmanTest(commonVar.ConfigDir)
+	}
+
 	// restores the original kubeconfig and working directory
 	Chdir(commonVar.OriginalWorkingDirectory)
 	err = os.Setenv("KUBECONFIG", commonVar.OriginalKubeconfig)
