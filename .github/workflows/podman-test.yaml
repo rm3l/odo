@@ -4,11 +4,21 @@ on:
     branches:    
       - main
 
+env:
+  # This should ideally be a configuration in the GH repo (secret or variable).
+  # This is currently hard-coded because GH won't expose secrets or variables to PRs created from forks.
+  # Hopefully, variables (which are non-sensible by definition) will be passed to workflows triggered by PRs from forks.
+  # See https://github.com/community/community/discussions/44322
+  PODMAN_EXEC_NODES: 10
 
 jobs:
-  ODO-PODMAN-TEST:
-    runs-on: ubuntu-latest
+  podman-v3-test:
+    # ubuntu-22.04 includes Podman v3.4.4: https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md
+    runs-on: ubuntu-22.04
     steps:
+
+    - name: Podman Info
+      run: podman info
 
     - name: Checkout
       uses: actions/checkout@v3
@@ -22,12 +32,59 @@ jobs:
       run: make install
 
     - name: Run Integration tests
-      env:
-        # This should ideally be a configuration in the GH repo (secret or variable).
-        # This is currently hard-coded because GH won't expose secrets or variables to PRs created from forks.
-        # Hopefully, variables (which are non-sensible by definition) will be passed to workflows triggered by PRs from forks.
-        # See https://github.com/community/community/discussions/44322
-        PODMAN_EXEC_NODES: 10
+      run: make test-integration-podman
+
+    - name: List and stop remaining containers
+      if: ${{ always() }}
+      run: |
+        podman pod ls --format '{{.Name}}' | xargs -I '{}' podman pod inspect '{}'
+        podman pod ls --format '{{.Name}}' | xargs podman pod stop || true
+
+  podman-latest-test:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Install latest Podman
+      # Inspired from https://github.com/FNNDSC/miniChRIS-k8s/blob/45a6a05a920a9d0cdacb6234cff73f79d1cfae9a/.github/workflows/ci.yml#L15-L40
+      run: |
+        # https://github.com/containers/podman/blob/main/troubleshooting.md#26-running-containers-with-resource-limits-fails-with-a-permissions-error
+        # In Github Actions, we can't just log in and out so we'll have to manipulate /sys files.
+        # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/managing_monitoring_and_updating_the_kernel/assembly_using-cgroupfs-to-manually-manage-cgroups_managing-monitoring-and-updating-the-kernel
+        sudo sh -c "
+          echo '+cpu +io +memory +pids' > /sys/fs/cgroup/user.slice/cgroup.subtree_control
+          echo '+cpu +io +memory +pids' >> /sys/fs/cgroup/user.slice/user-$(id -u).slice/cgroup.subtree_control
+          echo '+cpu +io +memory +pids' >> /sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/cgroup.subtree_control
+        "
+        
+        # https://podman.io/getting-started/installation#ubuntu
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_$(lsb_release -rs)/Release.key \
+          | gpg --dearmor \
+          | sudo tee /etc/apt/keyrings/devel_kubic_libcontainers_unstable.gpg > /dev/null
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/devel_kubic_libcontainers_unstable.gpg]\
+            https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_$(lsb_release -rs)/ /" \
+          | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:unstable.list > /dev/null
+        sudo apt-get update -qq
+        sudo apt-get -qq -y install podman
+
+        systemctl --user daemon-reload
+        systemctl --user restart podman.service
+
+    - name: Podman Info
+      run: podman info
+
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup Go
+      uses: actions/setup-go@v3
+      with:
+        go-version-file: 'go.mod'
+
+    - name: Build odo
+      run: make install
+
+    - name: Run Integration tests
       run: make test-integration-podman
 
     - name: List and stop remaining containers
