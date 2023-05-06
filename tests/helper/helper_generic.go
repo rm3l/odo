@@ -215,7 +215,7 @@ func CommonBeforeEach() CommonVar {
 
 		if NeedsPodman(specLabels) {
 			// Generate a dedicated containers.conf with a specific namespace
-			GenerateAndSetContainersConf(commonVar.ConfigDir)
+			beforeEachPodmanTest(commonVar.ConfigDir)
 		}
 	}
 	commonVar.OriginalWorkingDirectory = Getwd()
@@ -287,6 +287,9 @@ func CommonAfterEach(commonVar CommonVar) {
 	if commonVar.Project != "" {
 		// delete the random project/namespace created in CommonBeforeEach
 		commonVar.CliRunner.DeleteNamespaceProject(commonVar.Project, false)
+	}
+	if NeedsPodman(CurrentSpecReport().Labels()) {
+		afterEachPodmanTest(commonVar.ConfigDir)
 	}
 	// restores the original kubeconfig and working directory
 	Chdir(commonVar.OriginalWorkingDirectory)
