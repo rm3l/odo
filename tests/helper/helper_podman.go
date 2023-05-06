@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/blang/semver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -30,9 +29,9 @@ func beforeEachPodmanTest(configDir string) {
 	}
 
 	extraArgs := []string{
-		// Storage root dir in which data, including images, is stored
-		// (default: “/var/lib/containers/storage” for UID 0, “$HOME/.local/share/containers/storage” for other users).
-		"--root=" + rootDir,
+		//// Storage root dir in which data, including images, is stored
+		//// (default: “/var/lib/containers/storage” for UID 0, “$HOME/.local/share/containers/storage” for other users).
+		//"--root=" + rootDir,
 
 		// Storage state directory where all state information is stored
 		// (default: “/run/containers/storage” for UID 0, “/run/user/$UID/run” for other users).
@@ -42,30 +41,30 @@ func beforeEachPodmanTest(configDir string) {
 		// NOTE --tmpdir is not used for the temporary storage of downloaded images.
 		"--tmpdir=" + tmpDir,
 	}
-	podmanVersion := GetPodmanVersion()
-	podmanSemVer, err := semver.Make(podmanVersion)
-	if err == nil {
-		versionWithTransientStore, err2 := semver.Make("4.5.0")
-		if err2 == nil && podmanSemVer.GE(versionWithTransientStore) {
-			volumeDir := filepath.Join(podmanDir, "vol")
-			MakeDir(volumeDir)
-
-			extraArgs = append(extraArgs,
-				// Enables a global transient storage mode where all container metadata is stored on non-persistent media
-				// (i.e. in the location specified by --runroot).
-				// This mode allows starting containers faster, as well as guaranteeing a fresh state on boot
-				// in case of unclean shutdowns or other problems.
-				// However it is not compatible with a traditional model where containers persist across reboots.
-				// unknown flag on Podman v3
-				"--transient-store=true",
-
-				// Volume directory where builtin volume information is stored
-				// (default: “/var/lib/containers/storage/volumes” for UID 0, “$HOME/.local/share/containers/storage/volumes” for other users).
-				// Does not seem to work with Podman v3 (or play kube command?)
-				"--volumepath="+volumeDir,
-			)
-		}
-	}
+	//podmanVersion := GetPodmanVersion()
+	//podmanSemVer, err := semver.Make(podmanVersion)
+	//if err == nil {
+	//	versionWithTransientStore, err2 := semver.Make("4.5.0")
+	//	if err2 == nil && podmanSemVer.GE(versionWithTransientStore) {
+	//		volumeDir := filepath.Join(podmanDir, "vol")
+	//		MakeDir(volumeDir)
+	//
+	//		extraArgs = append(extraArgs,
+	//			// Enables a global transient storage mode where all container metadata is stored on non-persistent media
+	//			// (i.e. in the location specified by --runroot).
+	//			// This mode allows starting containers faster, as well as guaranteeing a fresh state on boot
+	//			// in case of unclean shutdowns or other problems.
+	//			// However it is not compatible with a traditional model where containers persist across reboots.
+	//			// unknown flag on Podman v3
+	//			"--transient-store=true",
+	//
+	//			// Volume directory where builtin volume information is stored
+	//			// (default: “/var/lib/containers/storage/volumes” for UID 0, “$HOME/.local/share/containers/storage/volumes” for other users).
+	//			// Does not seem to work with Podman v3 (or play kube command?)
+	//			"--volumepath="+volumeDir,
+	//		)
+	//	}
+	//}
 
 	Expect(os.Setenv("ODO_CONTAINER_BACKEND_GLOBAL_ARGS", strings.Join(extraArgs, ";"))).ShouldNot(HaveOccurred())
 }
