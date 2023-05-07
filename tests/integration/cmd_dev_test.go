@@ -2169,6 +2169,13 @@ ComponentSettings:
 				podman := podman
 				When(tt.name, helper.LabelPodmanIf(podman, func() {
 					BeforeEach(func() {
+						if orginalGlobalArgs, present := os.LookupEnv("ODO_CONTAINER_BACKEND_GLOBAL_ARGS"); present {
+							os.Unsetenv("ODO_CONTAINER_BACKEND_GLOBAL_ARGS")
+							DeferCleanup(func() {
+								Expect(os.Setenv("ODO_CONTAINER_BACKEND_GLOBAL_ARGS", orginalGlobalArgs)).ShouldNot(HaveOccurred())
+							})
+						}
+
 						helper.CopyExample(filepath.Join("source", "nodejs"), commonVar.Context)
 						var env []string
 						if podman {
