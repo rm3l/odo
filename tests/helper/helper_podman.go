@@ -45,8 +45,7 @@ func beforeEachPodmanTest(configDir string) {
 	podmanVersion := GetPodmanVersion()
 	podmanSemVer, err := semver.Make(podmanVersion)
 	if err == nil {
-		versionWithTransientStore, err2 := semver.Make("4.5.0")
-		if err2 == nil && podmanSemVer.GE(versionWithTransientStore) {
+		if vWithNewFeat, err2 := semver.Make("4.5.0"); err2 == nil && podmanSemVer.GE(vWithNewFeat) {
 			volumeDir := filepath.Join(podmanDir, "vol")
 			MakeDir(volumeDir)
 
