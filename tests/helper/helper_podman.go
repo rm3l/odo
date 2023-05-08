@@ -71,7 +71,11 @@ func IsolatePodmanTest(configDir string) {
 
 // GetPodmanRootExtraArgs returns the extra flags to pass to Podman, if set via the ODO_CONTAINER_BACKEND_GLOBAL_ARGS environment variable.
 func GetPodmanRootExtraArgs() []string {
-	return strings.Split(os.Getenv("ODO_CONTAINER_BACKEND_GLOBAL_ARGS"), ";")
+	extraArgs := os.Getenv("ODO_CONTAINER_BACKEND_GLOBAL_ARGS")
+	if extraArgs == "" {
+		return nil
+	}
+	return strings.Split(extraArgs, ";")
 }
 
 // CleanupIsolatedPodmanTest removes everything from Podman: this includes containers, volumes, images, and all storage created by Podman.
