@@ -156,8 +156,7 @@ func StartDevMode(options DevSessionOpts) (devSession DevSession, out []byte, er
 	cmd.Cmd.Stderr = c.Tty()
 
 	session := cmd.AddEnv(options.EnvVars...).Runner().session
-	// On Podman, pulling images might take a little bit longer, as image storage is separated per test
-	timeoutInSeconds := 600
+	timeoutInSeconds := 420
 	if options.TimeoutInSeconds != 0 {
 		timeoutInSeconds = options.TimeoutInSeconds
 	}

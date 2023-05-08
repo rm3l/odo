@@ -5,7 +5,10 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/devfile/api/v2/pkg/apis/workspaces/v1alpha2"
 	devfilepkg "github.com/devfile/api/v2/pkg/devfile"
+	"github.com/devfile/library/v2/pkg/devfile/parser"
+	"github.com/devfile/library/v2/pkg/devfile/parser/data/v2/common"
 	"github.com/tidwall/gjson"
 
 	"github.com/redhat-developer/odo/tests/helper"
@@ -104,7 +107,19 @@ var _ = Describe("odo list with devfile", func() {
 			helper.CopyExampleDevFile(
 				filepath.Join("source", "devfiles", "nodejs", "devfile-deploy.yaml"),
 				path.Join(commonVar.Context, "devfile.yaml"),
-				helper.DevfileMetadataNameSetter(componentName))
+				helper.DevfileMetadataNameSetter(componentName),
+				func(devfileObj *parser.DevfileObj) error {
+					components, err := devfileObj.Data.GetComponents(common.DevfileOptions{
+						FilterByName: "runtime",
+						ComponentOptions: common.ComponentOptions{
+							ComponentType: v1alpha2.ContainerComponentType,
+						},
+					})
+					Expect(err).ShouldNot(HaveOccurred())
+					Expect(components).Should(HaveLen(1))
+					components[0].Container.Endpoints[0].TargetPort = 8080 // Based on the source project (in source/nodejs)
+					return nil
+				})
 			helper.Chdir(commonVar.Context)
 		})
 
@@ -230,6 +245,8 @@ var _ = Describe("odo list with devfile", func() {
 
 		When("dev is running on podman", Label(helper.LabelPodman), func() {
 			BeforeEach(func() {
+				helper.IsolatePodmanTest(commonVar.ConfigDir)
+
 				var err error
 				devSession, _, _, _, err = helper.StartDevMode(helper.DevSessionOpts{
 					RunOnPodman: true,
@@ -239,6 +256,8 @@ var _ = Describe("odo list with devfile", func() {
 			AfterEach(func() {
 				devSession.Stop()
 				devSession.WaitEnd()
+
+				helper.CleanupIsolatedPodmanTest(commonVar.ConfigDir)
 			})
 
 			It("should display component depending on platform flag", func() {

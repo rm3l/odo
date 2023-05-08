@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
-	. "github.com/onsi/ginkgo/v2"
+	//. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/redhat-developer/odo/pkg/podman"
@@ -20,7 +20,7 @@ func getPodmanDir(configDir string) string {
 	return filepath.Join(configDir, "podman")
 }
 
-func beforeEachPodmanTest(configDir string) {
+func IsolatePodmanTest(configDir string) {
 	podmanDir := getPodmanDir(configDir)
 	rootDir := filepath.Join(podmanDir, "root")
 	runrootDir := filepath.Join(podmanDir, "run")
@@ -69,37 +69,42 @@ func beforeEachPodmanTest(configDir string) {
 	Expect(os.Setenv("ODO_CONTAINER_BACKEND_GLOBAL_ARGS", strings.Join(extraArgs, ";"))).ShouldNot(HaveOccurred())
 }
 
-// GetPodmanRootExtraArgs returns the extra flags to pass to Podman.
-// Make sure this is called after common.BeforeEach()
+// GetPodmanRootExtraArgs returns the extra flags to pass to Podman, if set via the ODO_CONTAINER_BACKEND_GLOBAL_ARGS environment variable.
 func GetPodmanRootExtraArgs() []string {
-	env, present := os.LookupEnv("ODO_CONTAINER_BACKEND_GLOBAL_ARGS")
-	Expect(present).To(BeTrue(),
-		"env var ODO_CONTAINER_BACKEND_GLOBAL_ARGS not found => make sure commonVar.BeforeEach was called before and that this test has the podman label")
-	return strings.Split(env, ";")
+	return strings.Split(os.Getenv("ODO_CONTAINER_BACKEND_GLOBAL_ARGS"), ";")
 }
 
-// afterEachPodmanTest removes everything from Podman: this includes containers, volumes, images, and all storage created by Podman.
-// /!\ This is intended to help remove the test directory (which also contains resources created via beforeEachPodmanTest);
+// CleanupIsolatedPodmanTest removes everything from Podman: this includes containers, volumes, images, and all storage created by Podman.
+// /!\ This is intended to help remove the test directory (which also contains resources created via isolatePodmanTest);
 // otherwise, the folders referenced in the storage.conf file (and managed by Podman) cannot be deleted by the current user.
-func afterEachPodmanTest(configDir string) {
+func CleanupIsolatedPodmanTest(configDir string) {
 	// Initially wanted to use "podman --root=... --runroot=... system reset", but for some reason, this causes issues with other tests
-	podmanDir := getPodmanDir(configDir)
-	if _, err := os.Stat(podmanDir); os.IsNotExist(err) {
-		fmt.Fprintf(GinkgoWriter, "[warn] Podman config directory not found at path %q\n", podmanDir)
-		return
-	}
-	cmd := exec.Command("podman", "unshare", "rm", "-rf", podmanDir)
-	fmt.Fprintln(GinkgoWriter, "Running command:", cmd.Args)
+	//podmanDir := getPodmanDir(configDir)
+	//if _, err := os.Stat(podmanDir); os.IsNotExist(err) {
+	//	fmt.Fprintf(GinkgoWriter, "[warn] Podman config directory not found at path %q\n", podmanDir)
+	//	return
+	//}
+	//cmd := exec.Command("podman", "unshare", "rm", "-rf", podmanDir)
+	//fmt.Fprintln(GinkgoWriter, "Running command:", cmd.Args)
+	//out, err := cmd.Output()
+	//if err != nil {
+	//	if exiterr, ok := err.(*exec.ExitError); ok {
+	//		err = fmt.Errorf("%s: %s\n%s", err, string(exiterr.Stderr), string(out))
+	//	}
+	//	fmt.Fprintf(GinkgoWriter, "[warn] Error while trying to remove podman dir %q: %v.\n"+
+	//		"You might need to remove it yourself by running %q\n%s", podmanDir, err.Error(), strings.Join(cmd.Args, " "), string(out))
+	//	return
+	//}
+	//fmt.Fprintf(GinkgoWriter, "output of command '%v': %s\n", cmd, string(out))
+
+	cmd := exec.Command("podman", append(GetPodmanRootExtraArgs(), "system", "reset", "--force")...)
 	out, err := cmd.Output()
-	if err != nil {
+	Expect(err).ToNot(HaveOccurred(), func() string {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			err = fmt.Errorf("%s: %s\n%s", err, string(exiterr.Stderr), string(out))
 		}
-		fmt.Fprintf(GinkgoWriter, "[warn] Error while trying to remove podman dir %q: %v.\n"+
-			"You might need to remove it yourself by running %q\n%s", podmanDir, err.Error(), strings.Join(cmd.Args, " "), string(out))
-		return
-	}
-	fmt.Fprintf(GinkgoWriter, "output of command '%v': %s\n", cmd, string(out))
+		return err.Error()
+	})
 }
 
 // ExtractK8sAndOcComponentsFromOutputOnPodman extracts the list of Kubernetes and OpenShift components from the "odo" output on Podman.
