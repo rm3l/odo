@@ -60,7 +60,7 @@ func (o *PodmanComponent) Exec(container string, args []string, expectedSuccess 
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			err = fmt.Errorf("%s: %s", err, string(exiterr.Stderr))
 		}
-		fmt.Fprintln(GinkgoWriter, err)
+		fmt.Fprintf(GinkgoWriter, "Error while running %q: %v\n%s\n", command.Args, err, string(out))
 	}
 	if expectedSuccess != nil {
 		if *expectedSuccess {
