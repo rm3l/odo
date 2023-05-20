@@ -219,7 +219,7 @@ test-integration-no-cluster:
 # For example: "PODMAN_EXEC_NODES=5".
 .PHONY: test-integration-podman
 test-integration-podman:
-	$(RUN_GINKGO) $(GINKGO_FLAGS_PODMAN) --junit-report="test-integration-podman.xml" --label-filter=podman tests/integration
+	$(RUN_GINKGO) $(GINKGO_FLAGS_PODMAN) --junit-report="test-integration-podman.xml" --label-filter='podman || podman-isolated' tests/integration
 
 .PHONY: test-integration
 test-integration: test-integration-no-cluster test-integration-cluster
