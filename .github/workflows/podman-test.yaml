@@ -1,37 +1,82 @@
 name: odo-podman-test
 on:
   pull_request:
-    branches:    
-      - main
-
+    branches: [main]
 
 jobs:
-  ODO-PODMAN-TEST:
-    runs-on: ubuntu-latest
+
+  test-odo-against-podman:
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        podman_version: [v3.4, v4.1, v4.2, v4.3, v4.4, v4.5]
+        experimental: [false]
+        os: [ubuntu-latest]
+        image: [quay.io/podman/stable]
+        include:
+          - podman_version: latest
+            experimental: true
+            os: ubuntu-latest
+            image: quay.io/podman/testing
+
+    name: podman-${{ matrix.podman_version }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    container:
+      image: ${{ matrix.image }}:${{ matrix.podman_version }}
+      options: --privileged
+
+    env:
+      GITCOMMIT: ${{ github.sha }}
+
     steps:
 
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Update Podman config
+        # https://github.com/containers/podman/blob/main/docs/tutorials/performance.md?plain=1
+        run: |
+          cat <<EOF | tee /etc/containers/containers.conf
+          [engine]
+          events_logger = "none"
+          EOF
 
-    - name: Setup Go
-      uses: actions/setup-go@v3
-      with:
-        go-version-file: 'go.mod'
+          cat <<EOF | tee /etc/containers/storage.conf
+          [storage]
+          driver = "overlay"
+          graphroot = "/var/lib/containers/storage"
+          runroot = "/run/containers/storage"
+          rootless_storage_path = "$HOME/.local/share/containers/storage"
+          #transient_store = true
+          
+          [storage.options]
+          pull_options = {enable_partial_images = "true", use_hard_links = "false", ostree_repos=""}
+          EOF
 
-    - name: Build odo
-      run: make install
+      - name: Show details about Podman
+        run: |
+          podman version
+          podman info
 
-    - name: Run Integration tests
-      env:
-        # This should ideally be a configuration in the GH repo (secret or variable).
-        # This is currently hard-coded because GH won't expose secrets or variables to PRs created from forks.
-        # Hopefully, variables (which are non-sensible by definition) will be passed to workflows triggered by PRs from forks.
-        # See https://github.com/community/community/discussions/44322
-        PODMAN_EXEC_NODES: 10
-      run: make test-integration-podman
+      - run: dnf -y install make gcc git
 
-    - name: List and stop remaining containers
-      if: ${{ always() }}
-      run: |
-        podman pod ls --format '{{.Name}}' | xargs -I '{}' podman pod inspect '{}'
-        podman pod ls --format '{{.Name}}' | xargs podman pod stop || true
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Build odo
+        run: make COMMON_GOFLAGS='-mod=vendor -buildvcs=false' install
+
+      - name: Run integration tests
+        env:
+          # This should ideally be a configuration in the GH repo (secret or variable).
+          # This is currently hard-coded because GH won't expose secrets or variables to PRs created from forks.
+          # Hopefully, variables (which are not sensible by definition) will be passed to workflows triggered by PRs from forks.
+          # See https://github.com/community/community/discussions/44322
+          PODMAN_EXEC_NODES: 10
+#          GINKGO_TEST_ARGS: --fail-fast
+          ODO_CONTAINER_BACKEND_GLOBAL_ARGS: --log-level=error
+        run: make COMMON_GOFLAGS='-mod=vendor -buildvcs=false' test-integration-podman
