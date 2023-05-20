@@ -28,6 +28,9 @@ func (o *PodmanCli) ExecCMDInContainer(ctx context.Context, containerName, podNa
 
 	out, err := command.Output()
 	if err != nil {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			err = fmt.Errorf("%s: %s", err, string(exiterr.Stderr))
+		}
 		return err
 	}
 	_, err = stdout.Write(out)
