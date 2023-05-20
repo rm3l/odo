@@ -2281,10 +2281,14 @@ ComponentSettings:
 							expected := "podman "
 							if len(tt.containerBackendGlobalExtraArgs) != 0 {
 								expected += fmt.Sprintf("%s ", strings.Join(tt.containerBackendGlobalExtraArgs, " "))
+							} else if globalArgs, present := os.LookupEnv("ODO_CONTAINER_BACKEND_GLOBAL_ARGS"); present {
+								expected += fmt.Sprintf("%s ", strings.Join(strings.Split(globalArgs, ";"), " "))
 							}
 							expected += "play kube "
 							if len(tt.containerRunExtraArgs) != 0 {
 								expected += fmt.Sprintf("%s ", strings.Join(tt.containerRunExtraArgs, " "))
+							} else if runArgs, present := os.LookupEnv("ODO_CONTAINER_RUN_ARGS"); present {
+								expected += fmt.Sprintf("%s ", strings.Join(strings.Split(runArgs, ";"), " "))
 							}
 							expected += "-"
 							By("checking that extra args are passed to the podman play kube command", func() {
