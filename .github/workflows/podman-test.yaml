@@ -70,6 +70,18 @@ jobs:
       - name: Build odo
         run: make COMMON_GOFLAGS='-mod=vendor -buildvcs=false' install
 
+      - name: Pre-pull images
+        run: |
+          dnf -y install wget && \
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && \
+          chmod a+x /usr/local/bin/yq && \
+          yq --version
+
+          for img in $(yq '.components[] | select(has("container")).container.image' tests/examples/source/devfiles/**/*.yaml | grep -v -- '---' | sort | uniq)
+          do \
+            podman image pull $img || echo "[warn] unable to pull $img"
+          done
+
       - name: Run integration tests
         env:
           # This should ideally be a configuration in the GH repo (secret or variable).
