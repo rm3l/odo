@@ -7,7 +7,7 @@ title: Introduction
 
 `odo` is a fast, iterative and straightforward CLI tool for developers who write, build, and deploy applications on Kubernetes.
 
-We abstract the complex concepts of Kubernetes so you can focus on one thing: `code`.
+We abstract the complex concepts of Kubernetes so you can focus on one thing: **code**.
 
 Choose your favourite framework and `odo` will deploy it *fast* and *often* to your container orchestrator cluster.
 
