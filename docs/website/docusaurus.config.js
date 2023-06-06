@@ -32,7 +32,7 @@ module.exports = {
     },
     announcementBar: {
       id: 'announcementBar-2', // Increment on change
-      content: `⭐️ Love odo? Support us by giving it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/redhat-developer/odo">GitHub</a>! ⭐️`,
+      content: `⭐️ Hey there!!! Love odo? Support us by giving it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/redhat-developer/odo">GitHub</a>! ⭐️`,
     },
     navbar: {
       title: 'odo',
