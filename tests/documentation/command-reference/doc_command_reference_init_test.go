@@ -123,19 +123,57 @@ var _ = Describe("doc command reference odo init", Label(helper.LabelNoCluster),
 			Expect(diff).To(BeEmpty(), file)
 		})
 
+		When("setting up the registry", func() {
+			const (
+				defaultReg    = "DefaultDevfileRegistry"
+				defaultRegURL = "https://registry.devfile.io"
+				stagingReg    = "StagingRegistry"
+				stagingRegURL = "https://registry.stage.devfile.io"
+			)
+
+			BeforeEach(func() {
+				helper.Cmd("odo", "preference", "remove", "registry", defaultReg, "-f").ShouldPass()
+				helper.Cmd("odo", "preference", "add", "registry", defaultReg, defaultRegURL).ShouldPass()
+
+				helper.Cmd("odo", "preference", "add", "registry", stagingReg, stagingRegURL).ShouldPass()
+			})
+
+			AfterEach(func() {
+				helper.Cmd("odo", "preference", "remove", "registry", stagingReg, "-f").ShouldPass()
+				helper.SetDefaultDevfileRegistryAsStaging()
+			})
+
+			removePreferenceKeys := func(docString string) string {
+				return "[...]\n\n" + docString[strings.Index(docString, "Devfile registries"):]
+			}
+
+			It("should display the required registries", func() {
+				args := []string{"preference", "view"}
+				out := helper.Cmd("odo", args...).ShouldPass().Out()
+				got := helper.StripAnsi(out)
+				got = removePreferenceKeys(got)
+				got = fmt.Sprintf(outputStringFormat, strings.Join(args, " "), helper.StripSpinner(got))
+				file := "registry_output.mdx"
+				want := helper.GetMDXContent(filepath.Join(commonPath, file))
+				diff := cmp.Diff(want, got)
+				Expect(diff).To(BeEmpty(), file)
+			})
+		})
+
 		Context("fetching devfile from a registry", func() {
-			When("setting up the registry", func() {
+
+			When("setting up the registries", func() {
 				const (
-					defaultReg    = "DefaultDevfileRegistry"
-					defaultRegURL = "https://registry.devfile.io"
-					stagingReg    = "StagingRegistry"
-					stagingRegURL = "https://registry.stage.devfile.io"
+					defaultReg = "DefaultDevfileRegistry"
+					stagingReg = "StagingRegistry"
 				)
+				regUrl := helper.GetDevfileRegistryURL()
+
 				BeforeEach(func() {
 					helper.Cmd("odo", "preference", "remove", "registry", defaultReg, "-f").ShouldPass()
-					helper.Cmd("odo", "preference", "add", "registry", defaultReg, defaultRegURL).ShouldPass()
+					helper.Cmd("odo", "preference", "add", "registry", defaultReg, regUrl).ShouldPass()
 
-					helper.Cmd("odo", "preference", "add", "registry", stagingReg, stagingRegURL).ShouldPass()
+					helper.Cmd("odo", "preference", "add", "registry", stagingReg, regUrl).ShouldPass()
 				})
 
 				AfterEach(func() {
@@ -143,61 +181,35 @@ var _ = Describe("doc command reference odo init", Label(helper.LabelNoCluster),
 					helper.SetDefaultDevfileRegistryAsStaging()
 				})
 
-				removePreferenceKeys := func(docString string) string {
-					return "[...]\n\n" + docString[strings.Index(docString, "Devfile registries"):]
-				}
-				checkRegistriesOutput := func() {
-					args := []string{"preference", "view"}
+				It("should display the registry list for the specific devfile", func() {
+					args := []string{"registry", "--devfile", "nodejs-react"}
 					out := helper.Cmd("odo", args...).ShouldPass().Out()
 					got := helper.StripAnsi(out)
-					got = removePreferenceKeys(got)
 					got = fmt.Sprintf(outputStringFormat, strings.Join(args, " "), helper.StripSpinner(got))
-					file := "registry_output.mdx"
+					file := "registry_list_output.mdx"
 					want := helper.GetMDXContent(filepath.Join(commonPath, file))
 					diff := cmp.Diff(want, got)
 					Expect(diff).To(BeEmpty(), file)
-				}
+				})
 
 				It("Fetch Devfile from a specific registry of the list", func() {
-					By("checking for required registries", func() {
-						checkRegistriesOutput()
-					})
-
-					By("checking for the init output", func() {
-						args := []string{"init", "--name", "my-spring-app", "--devfile", "java-springboot", "--devfile-registry", "DefaultDevfileRegistry", "--starter", "springbootproject"}
-						out := helper.Cmd("odo", args...).ShouldPass().Out()
-						got := fmt.Sprintf(outputStringFormat, strings.Join(args, " "), helper.StripSpinner(out))
-						file := "devfile_from_specific_registry_output.mdx"
-						want := helper.GetMDXContent(filepath.Join(commonPath, file))
-						diff := cmp.Diff(want, got)
-						Expect(diff).To(BeEmpty(), file)
-					})
+					args := []string{"init", "--name", "my-spring-app", "--devfile", "java-springboot", "--devfile-registry", "DefaultDevfileRegistry", "--starter", "springbootproject"}
+					out := helper.Cmd("odo", args...).ShouldPass().Out()
+					got := fmt.Sprintf(outputStringFormat, strings.Join(args, " "), helper.StripSpinner(out))
+					file := "devfile_from_specific_registry_output.mdx"
+					want := helper.GetMDXContent(filepath.Join(commonPath, file))
+					diff := cmp.Diff(want, got)
+					Expect(diff).To(BeEmpty(), file)
 				})
+
 				It("Fetch Devfile from any registry of the list", func() {
-					By("checking for required registries", func() {
-						checkRegistriesOutput()
-					})
-
-					By("checking for the registry list output", func() {
-						args := []string{"registry", "--devfile", "nodejs-react"}
-						out := helper.Cmd("odo", args...).ShouldPass().Out()
-						got := helper.StripAnsi(out)
-						got = fmt.Sprintf(outputStringFormat, strings.Join(args, " "), helper.StripSpinner(got))
-						file := "registry_list_output.mdx"
-						want := helper.GetMDXContent(filepath.Join(commonPath, file))
-						diff := cmp.Diff(want, got)
-						Expect(diff).To(BeEmpty(), file)
-					})
-
-					By("checking for the init output", func() {
-						args := []string{"init", "--devfile", "nodejs-react", "--name", "my-nr-app"}
-						out := helper.Cmd("odo", args...).ShouldPass().Out()
-						got := fmt.Sprintf(outputStringFormat, strings.Join(args, " "), helper.StripSpinner(out))
-						file := "devfile_from_any_registry_output.mdx"
-						want := helper.GetMDXContent(filepath.Join(commonPath, file))
-						diff := cmp.Diff(want, got)
-						Expect(diff).To(BeEmpty(), file)
-					})
+					args := []string{"init", "--devfile", "nodejs-react", "--name", "my-nr-app"}
+					out := helper.Cmd("odo", args...).ShouldPass().Out()
+					got := fmt.Sprintf(outputStringFormat, strings.Join(args, " "), helper.StripSpinner(out))
+					file := "devfile_from_any_registry_output.mdx"
+					want := helper.GetMDXContent(filepath.Join(commonPath, file))
+					diff := cmp.Diff(want, got)
+					Expect(diff).To(BeEmpty(), file)
 				})
 
 			})
