@@ -27,8 +27,8 @@ require (
 	github.com/mattn/go-colorable v0.1.13
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/ginkgo/v2 v2.8.0
-	github.com/onsi/gomega v1.26.0
+	github.com/onsi/ginkgo/v2 v2.10.0
+	github.com/onsi/gomega v1.27.7
 	github.com/openshift/api v0.0.0-20220525145417-ee5b62754c68
 	github.com/openshift/client-go v0.0.0-20220603133046-984ee5ebedcf
 	github.com/openshift/oc v0.0.0-alpha.0.0.20220402064836-f1f09a392fd1
@@ -47,10 +47,10 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/tidwall/gjson v1.14.4
 	github.com/zalando/go-keyring v0.2.1
-	golang.org/x/sync v0.1.0
-	golang.org/x/sys v0.5.0
-	golang.org/x/term v0.5.0
-	golang.org/x/text v0.7.0
+	golang.org/x/sync v0.2.0
+	golang.org/x/sys v0.8.0
+	golang.org/x/term v0.8.0
+	golang.org/x/text v0.9.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/segmentio/analytics-go.v3 v3.0.0-00010101000000-000000000000
 	gopkg.in/yaml.v2 v2.4.0
@@ -110,14 +110,14 @@ require (
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
-	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
+	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
@@ -187,11 +187,11 @@ require (
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
-	golang.org/x/mod v0.7.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/mod v0.10.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.5.0 // indirect
+	golang.org/x/tools v0.9.3 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220502173005-c8bf987b8c21 // indirect
