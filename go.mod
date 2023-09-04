@@ -36,7 +36,7 @@ require (
 	github.com/openshift/client-go v0.0.0-20220603133046-984ee5ebedcf
 	github.com/openshift/oc v0.0.0-alpha.0.0.20220402064836-f1f09a392fd1
 	github.com/operator-framework/api v0.17.6
-	github.com/operator-framework/operator-lifecycle-manager v0.21.2
+	github.com/operator-framework/operator-lifecycle-manager v3.11.0+incompatible
 	github.com/pborman/uuid v1.2.1
 	github.com/posener/complete v1.2.3
 	github.com/redhat-developer/service-binding-operator v1.0.1-0.20211222115357-5b7bbba3bfb3
@@ -93,6 +93,7 @@ require (
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/containerd/containerd v1.6.20 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
+	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/creack/pty v1.1.18 // indirect
 	github.com/danieljoos/wincred v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
