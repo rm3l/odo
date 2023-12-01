@@ -51,7 +51,7 @@ var (
 	// We do not use ktemplates.Normalize here as it messed up the newlines..
 	odoLong = `  __
  /  \__     odo is a CLI tool for fast iterative application development
- \__/  \    deployed immediately to your kubernetes cluster.
+ \__/  \    deployed immediately to your Kubernetes cluster.
  /  \__/    Find more information at https://odo.dev
  \__/`
 
