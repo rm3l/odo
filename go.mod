@@ -38,7 +38,7 @@ require (
 	github.com/openshift/api v0.0.0-20220525145417-ee5b62754c68
 	github.com/openshift/client-go v0.0.0-20220603133046-984ee5ebedcf
 	github.com/openshift/oc v0.0.0-alpha.0.0.20220402064836-f1f09a392fd1
-	github.com/operator-framework/api v0.17.7
+	github.com/operator-framework/api v0.20.0
 	github.com/operator-framework/operator-lifecycle-manager v0.21.2
 	github.com/pborman/uuid v1.2.1
 	github.com/posener/complete v1.2.3
@@ -60,11 +60,11 @@ require (
 	gopkg.in/segmentio/analytics-go.v3 v3.0.0-00010101000000-000000000000
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.27.2
-	k8s.io/apiextensions-apiserver v0.27.2
-	k8s.io/apimachinery v0.27.3
+	k8s.io/api v0.27.7
+	k8s.io/apiextensions-apiserver v0.27.7
+	k8s.io/apimachinery v0.27.7
 	k8s.io/cli-runtime v0.24.0
-	k8s.io/client-go v0.27.2
+	k8s.io/client-go v0.27.7
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.100.1
 	k8s.io/kubectl v0.24.0
@@ -109,7 +109,7 @@ require (
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emicklei/dot v0.15.0 // indirect
-	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
+	github.com/emicklei/go-restful/v3 v3.10.2 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
@@ -207,8 +207,8 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	k8s.io/apiserver v0.27.2 // indirect
-	k8s.io/component-base v0.27.2 // indirect
+	k8s.io/apiserver v0.27.7 // indirect
+	k8s.io/component-base v0.27.7 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	oras.land/oras-go v1.1.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
