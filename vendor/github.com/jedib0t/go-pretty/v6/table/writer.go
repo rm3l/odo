@@ -16,6 +16,7 @@ type Writer interface {
 	RenderCSV() string
 	RenderHTML() string
 	RenderMarkdown() string
+	RenderTSV() string
 	ResetFooters()
 	ResetHeaders()
 	ResetRows()
@@ -32,6 +33,7 @@ type Writer interface {
 	SortBy(sortBy []SortBy)
 	Style() *Style
 	SuppressEmptyColumns()
+	SuppressTrailingSpaces()
 
 	// deprecated; in favor of Style().HTML.CSSClass
 	SetHTMLCSSClass(cssClass string)

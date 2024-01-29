@@ -26,7 +26,7 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
-	github.com/jedib0t/go-pretty/v6 v6.4.7
+	github.com/jedib0t/go-pretty/v6 v6.5.3
 	github.com/kubernetes-sigs/service-catalog v0.3.1
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mitchellh/go-ps v1.0.0
@@ -54,7 +54,7 @@ require (
 	github.com/zalando/go-keyring v0.2.3
 	golang.org/x/sync v0.6.0
 	golang.org/x/sys v0.16.0
-	golang.org/x/term v0.15.0
+	golang.org/x/term v0.16.0
 	golang.org/x/text v0.14.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/segmentio/analytics-go.v3 v3.0.0-00010101000000-000000000000
@@ -131,7 +131,7 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/licensecheck v0.3.1 // indirect
-	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1 // indirect
+	github.com/google/pprof v0.0.0-20211214055906-6f57359322fd // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
@@ -152,7 +152,7 @@ require (
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.13 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
